@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - livekit.stunner.l7mp.io.l7mp.io
+  resources:
+  - livekitoperators
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - livekit.stunner.l7mp.io.l7mp.io
+  resources:
+  - livekitoperators/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - livekit.stunner.l7mp.io.l7mp.io
+  resources:
+  - livekitoperators/status
+  verbs:
+  - get
+  - patch
+  - update
