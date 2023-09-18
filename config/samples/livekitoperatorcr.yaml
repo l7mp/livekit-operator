@@ -1,8 +1,6 @@
 apiVersion: livekit.stunner.l7mp.io.l7mp.io/v1alpha1
 kind: LiveKitOperator
 metadata:
-  annotations:
-
   #copy crd's annotations to final deployment
   labels:
     app.kubernetes.io/name: livekitoperator
@@ -20,11 +18,11 @@ spec:
         # container template
         container:
           image: dummy-repo/dummy-image:dummy-tag
-          pullPolicy: IfNotPresent
+          imagePullPolicy: IfNotPresent
           args: # TODO
           command: # TODO
           env: # TODO
-          terminationGracePeriod: 3600
+          terminationGracePeriodSeconds: 3600
           affinity: # TODO
           resources:
             limits:
@@ -45,40 +43,34 @@ spec:
             port_range_end: 60000
             port_range_start: 50000
             tcp_port: 7801
-            stun_servers:
-              - stunner_ip:3478
             turn_servers:
               - credential: pass-1
                 host: stunner_ip
                 port: 3478
                 protocol: udp
                 username: user-1
-            use_external_ip: false
-          turn:
-            enabled: false
-            loadBalancerAnnotations: {}
 
-      service:
-        namespace: dummy
-        type: LoadBalancer
-        ports:
-          - port: 1
-            protocol: TCP
-          - port: 2
-            protocol: TCP
-
-
-
-
-
-
-    scaling:
-    #TODO
-    ingress:
-    #TODO
-    egress:
-    #TODO
-    certManager:
-    #TODO
-    monitoring:
-    #TODO
+#      service:
+#        namespace: dummy
+#        type: LoadBalancer
+#        ports:
+#          - port: 1
+#            protocol: TCP
+#          - port: 2
+#            protocol: TCP
+#
+#
+#
+#
+#
+#
+#    scaling:
+#    #TODO
+#    ingress:
+#    #TODO
+#    egress:
+#    #TODO
+#    certManager:
+#    #TODO
+#    monitoring:
+#    #TODO

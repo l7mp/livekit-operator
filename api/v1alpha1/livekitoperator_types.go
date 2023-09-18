@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,11 +25,11 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TURNServer struct {
-	Host       string `json:"host"`
-	Port       int    `json:"port"`
-	Protocol   string `json:"protocol"`
-	Username   string `json:"username,omitempty"`
-	Credential string `json:"credential,omitempty"`
+	Host       *string `json:"host"`
+	Port       *int    `json:"port"`
+	Protocol   *string `json:"protocol"`
+	Username   *string `json:"username,omitempty"`
+	Credential *string `json:"credential,omitempty"`
 }
 
 type RTCConfig struct {
@@ -41,7 +41,7 @@ type RTCConfig struct {
 	// TURN servers. In case users want to define themselves this they can.
 	// However, it is advised to omit this to let the operator configure it.
 	// +optional
-	TURNServers *[]TURNServer `json:"turn_servers,omitempty"`
+	TURNServers []*TURNServer `json:"turn_servers,omitempty"`
 }
 
 type Config struct {
@@ -49,7 +49,75 @@ type Config struct {
 	LogLevel *string            `json:"log_level"`
 	Port     *int32             `json:"port"`
 	Redis    *map[string]string `json:"redis"`
-	RTC      RTCConfig          `json:"rtc"`
+	RTC      *RTCConfig         `json:"rtc"`
+}
+
+type Container struct {
+	// Container image name.
+	//
+	// +optional
+	Image string `json:"image,omitempty"`
+
+	// Image pull policy. One of Always, Never, IfNotPresent.
+	//
+	// +optional
+	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// Entrypoint array. Defaults: "stunnerd".
+	//
+	// +optional
+	Command []string `json:"command,omitempty"`
+
+	// Arguments to the entrypoint.
+	//
+	// +optional
+	Args []string `json:"args,omitempty"`
+
+	// List of environment variables to set in the stunnerd container.
+	//
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Resources required by stunnerd.
+	//
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Optional duration in seconds the stunnerd needs to terminate gracefully. Defaults to 3600 seconds.
+	//
+	// +optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+
+	// Host networking requested for the stunnerd pod to use the host's network namespace.
+	// Can be used to implement public TURN servers with Kubernetes.  Defaults to false.
+	//
+	// +optional
+	HostNetwork bool `json:"hostNetwork,omitempty"`
+
+	// Scheduling constraints.
+	//
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// SecurityContext holds pod-level security attributes and common container settings.
+	//
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+
+	// If specified, the pod's tolerations.
+	//
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// If specified, the health-check port.
+	//
+	// +optional
+	HealthCheckPort *int `json:"healthCheckPort,omitempty"`
+
+	// // If specified, the metrics collection port.
+	// //
+	// // +optional
+	// MetricsEndpointPort *int `json:"metricsEndpointPort,omitempty"`
 }
 
 type Deployment struct {
@@ -65,7 +133,7 @@ type Deployment struct {
 	//TODO
 	//
 	// +optional
-	Container v1.Container `json:"container"`
+	Container *Container `json:"container"`
 
 	// Config holds the configuration for the livekit server that is executed.
 	//

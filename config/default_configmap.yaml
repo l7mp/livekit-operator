@@ -1,0 +1,30 @@
+# Livekit server
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livekit-server
+data:
+  config.yaml: |
+    # access_token must be at least 32 chars long
+    keys:
+      access_token: secretsecretsecretsecretsecretsecret
+    log_level: info
+    port: 7880
+    redis:
+      address: redis.default.svc:6379
+    rtc:
+      port_range_end: 60000
+      port_range_start: 50000
+      tcp_port: 7801
+      stun_servers:
+        - stunner_ip:3478
+      turn_servers:
+        - credential: pass-1
+          host: stunner_ip
+          port: 3478
+          protocol: udp
+          username: user-1
+      use_external_ip: false
+    turn:
+      enabled: false
+      loadBalancerAnnotations: {}
