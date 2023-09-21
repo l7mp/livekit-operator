@@ -1,31 +1,27 @@
-# permissions for end users to edit livekitoperators.
+# permissions for end users to view livekitmeshes.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: livekitoperator-editor-role
+    app.kubernetes.io/instance: livekitmesh-viewer-role
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: livekit-operator
     app.kubernetes.io/part-of: livekit-operator
     app.kubernetes.io/managed-by: kustomize
-  name: livekitoperator-editor-role
+  name: livekitmesh-viewer-role
 rules:
 - apiGroups:
   - livekit.stunner.l7mp.io.l7mp.io
   resources:
-  - livekitoperators
+  - livekitmeshes
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - livekit.stunner.l7mp.io.l7mp.io
   resources:
-  - livekitoperators/status
+  - livekitmeshes/status
   verbs:
   - get

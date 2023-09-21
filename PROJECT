@@ -17,7 +17,7 @@ resources:
   controller: true
   domain: l7mp.io
   group: livekit.stunner.l7mp.io
-  kind: LiveKitOperator
+  kind: LiveKitMesh
   path: github.com/l7mp/livekit-operator/api/v1alpha1
   version: v1alpha1
 version: "3"

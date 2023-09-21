@@ -1,4 +1,4 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-- livekit.stunner.l7mp.io_v1alpha1_livekitoperator.yaml
+- livekit.stunner.l7mp.io_v1alpha1_livekitmesh.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

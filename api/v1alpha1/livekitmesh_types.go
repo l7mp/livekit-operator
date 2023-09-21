@@ -21,37 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-type TURNServer struct {
-	Host       *string `json:"host"`
-	Port       *int    `json:"port"`
-	Protocol   *string `json:"protocol"`
-	Username   *string `json:"username,omitempty"`
-	Credential *string `json:"credential,omitempty"`
-}
-
-type RTCConfig struct {
-	PortRangeStart *int32 `json:"port_range_start"`
-	PortRangeEnd   *int32 `json:"port_range_end"`
-	TcpPort        *int32 `json:"tcp_port"`
-
-	// TURNServers holds the configuration for the user defined
-	// TURN servers. In case users want to define themselves this they can.
-	// However, it is advised to omit this to let the operator configure it.
-	// +optional
-	TURNServers []*TURNServer `json:"turn_servers,omitempty"`
-}
-
-type Config struct {
-	Keys     *map[string]string `json:"keys"`
-	LogLevel *string            `json:"log_level"`
-	Port     *int32             `json:"port"`
-	Redis    *map[string]string `json:"redis"`
-	RTC      *RTCConfig         `json:"rtc"`
-}
-
 type Container struct {
 	// Container image name.
 	//
@@ -135,13 +104,13 @@ type Deployment struct {
 	// +optional
 	Container *Container `json:"container"`
 
-	// Config holds the configuration for the livekit server that is executed.
-	//
-	//
-	Config *Config `json:"config"`
+	/*	// Config holds the configuration for the livekit server that is executed.
+		//
+		//
+		Config *Config `json:"config"`*/
 }
 
-type MediaServer struct {
+type LiveKit struct {
 
 	// +kubebuilder:validation:Enum=livekit
 	// +kubebuilder:default=livekit
@@ -171,11 +140,11 @@ type Monitoring struct {
 
 type Component struct {
 
-	// MediaServer is the main resource that the operator manages. By default, it supports
+	// LiveKit is the main resource that the operator manages. By default, it supports
 	// only the LiveKit server as a media server but in the future it might support other
 	// media servers as well.
 	// +kubebuilder:validation:Required
-	MediaServer *MediaServer `json:"mediaServer"`
+	LiveKit *LiveKit `json:"liveKit"`
 
 	// LiveKit's Ingress resource descriptor.
 	// This resource makes it possible to stream videos(prerecorded or live) into
@@ -206,20 +175,20 @@ type Component struct {
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 }
 
-// LiveKitOperatorSpec defines the desired state of LiveKitOperator
-type LiveKitOperatorSpec struct {
+// LiveKitMeshSpec defines the desired state of LiveKitMesh
+type LiveKitMeshSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of LiveKitOperator. Edit livekitoperator_types.go to remove/update
+	// Foo is an example field of LiveKitMesh. Edit livekitmesh_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 
 	// +kubebuilder:validation:Required
 	Components *Component `json:"components"`
 }
 
-// LiveKitOperatorStatus defines the observed state of LiveKitOperator
-type LiveKitOperatorStatus struct {
+// LiveKitMeshStatus defines the observed state of LiveKitMesh
+type LiveKitMeshStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -227,24 +196,24 @@ type LiveKitOperatorStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// LiveKitOperator is the Schema for the livekitoperators API
-type LiveKitOperator struct {
+// LiveKitMesh is the Schema for the livekitmeshes API
+type LiveKitMesh struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   LiveKitOperatorSpec   `json:"spec,omitempty"`
-	Status LiveKitOperatorStatus `json:"status,omitempty"`
+	Spec   LiveKitMeshSpec   `json:"spec,omitempty"`
+	Status LiveKitMeshStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// LiveKitOperatorList contains a list of LiveKitOperator
-type LiveKitOperatorList struct {
+// LiveKitMeshList contains a list of LiveKitMesh
+type LiveKitMeshList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []LiveKitOperator `json:"items"`
+	Items           []LiveKitMesh `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&LiveKitOperator{}, &LiveKitOperatorList{})
+	SchemeBuilder.Register(&LiveKitMesh{}, &LiveKitMeshList{})
 }

@@ -2,7 +2,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: livekit-server
+  name: default-livekit-config
+  namespace: default
+  labels:
+    l7mp.io/livekit-config: livekit-config
 data:
   config.yaml: |
     # access_token must be at least 32 chars long

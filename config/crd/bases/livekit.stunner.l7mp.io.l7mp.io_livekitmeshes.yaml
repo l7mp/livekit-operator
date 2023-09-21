@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: livekitoperators.livekit.stunner.l7mp.io.l7mp.io
+  name: livekitmeshes.livekit.stunner.l7mp.io.l7mp.io
 spec:
   group: livekit.stunner.l7mp.io.l7mp.io
   names:
-    kind: LiveKitOperator
-    listKind: LiveKitOperatorList
-    plural: livekitoperators
-    singular: livekitoperator
+    kind: LiveKitMesh
+    listKind: LiveKitMeshList
+    plural: livekitmeshes
+    singular: livekitmesh
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: LiveKitOperator is the Schema for the livekitoperators API
+        description: LiveKitMesh is the Schema for the livekitmeshes API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LiveKitOperatorSpec defines the desired state of LiveKitOperator
+            description: LiveKitMeshSpec defines the desired state of LiveKitMesh
             properties:
               components:
                 properties:
@@ -52,78 +52,13 @@ spec:
                       that this resource enables a one-way communication between the
                       client and the media server.
                     type: object
-                  mediaServer:
-                    description: MediaServer is the main resource that the operator
-                      manages. By default, it supports only the LiveKit server as
-                      a media server but in the future it might support other media
-                      servers as well.
+                  liveKit:
+                    description: LiveKit is the main resource that the operator manages.
+                      By default, it supports only the LiveKit server as a media server
+                      but in the future it might support other media servers as well.
                     properties:
                       deployment:
                         properties:
-                          config:
-                            description: Config holds the configuration for the livekit
-                              server that is executed.
-                            properties:
-                              keys:
-                                additionalProperties:
-                                  type: string
-                                type: object
-                              log_level:
-                                type: string
-                              port:
-                                format: int32
-                                type: integer
-                              redis:
-                                additionalProperties:
-                                  type: string
-                                type: object
-                              rtc:
-                                properties:
-                                  port_range_end:
-                                    format: int32
-                                    type: integer
-                                  port_range_start:
-                                    format: int32
-                                    type: integer
-                                  tcp_port:
-                                    format: int32
-                                    type: integer
-                                  turn_servers:
-                                    description: TURNServers holds the configuration
-                                      for the user defined TURN servers. In case users
-                                      want to define themselves this they can. However,
-                                      it is advised to omit this to let the operator
-                                      configure it.
-                                    items:
-                                      properties:
-                                        credential:
-                                          type: string
-                                        host:
-                                          type: string
-                                        port:
-                                          type: integer
-                                        protocol:
-                                          type: string
-                                        username:
-                                          type: string
-                                      required:
-                                      - host
-                                      - port
-                                      - protocol
-                                      type: object
-                                    type: array
-                                required:
-                                - port_range_end
-                                - port_range_start
-                                - tcp_port
-                                type: object
-                            required:
-                            - keys
-                            - log_level
-                            - port
-                            - redis
-                            - rtc
-                            type: object
                           container:
                             description: Container template for the containers created
                               in each Pod in the replicaset. If omitted the default
@@ -1624,8 +1559,6 @@ spec:
                               Defaults to 1.
                             format: int32
                             type: integer
-                        required:
-                        - config
                         type: object
                       type:
                         default: livekit
@@ -1641,17 +1574,17 @@ spec:
                       corresponding resources
                     type: object
                 required:
-                - mediaServer
+                - liveKit
                 type: object
               foo:
-                description: Foo is an example field of LiveKitOperator. Edit livekitoperator_types.go
+                description: Foo is an example field of LiveKitMesh. Edit livekitmesh_types.go
                   to remove/update
                 type: string
             required:
             - components
             type: object
           status:
-            description: LiveKitOperatorStatus defines the observed state of LiveKitOperator
+            description: LiveKitMeshStatus defines the observed state of LiveKitMesh
             type: object
         type: object
     served: true

@@ -8,7 +8,7 @@ rules:
 - apiGroups:
   - livekit.stunner.l7mp.io.l7mp.io
   resources:
-  - livekitoperators
+  - livekitmeshes
   verbs:
   - create
   - delete
@@ -20,13 +20,13 @@ rules:
 - apiGroups:
   - livekit.stunner.l7mp.io.l7mp.io
   resources:
-  - livekitoperators/finalizers
+  - livekitmeshes/finalizers
   verbs:
   - update
 - apiGroups:
   - livekit.stunner.l7mp.io.l7mp.io
   resources:
-  - livekitoperators/status
+  - livekitmeshes/status
   verbs:
   - get
   - patch

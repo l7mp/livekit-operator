@@ -34,7 +34,7 @@ func (o *Operator) Start(ctx context.Context) error {
 	log.Info("Starting operator")
 
 	log.Info("starting LiveKitOperator controller")
-	if err := controllers.RegisterLiveKitOperatorController(o.mgr, o.logger); err != nil {
+	if err := controllers.RegisterLiveKitMeshController(o.mgr, o.logger); err != nil {
 		return fmt.Errorf("cannot register LiveKitOperator controller: %w", err)
 	}
 

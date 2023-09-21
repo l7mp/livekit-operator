@@ -18,10 +18,13 @@ package main
 
 import (
 	"flag"
+	"github.com/l7mp/livekit-operator/internal/controllers"
+	"os"
+
+	"go.uber.org/zap/zapcore"
+
 	"github.com/l7mp/livekit-operator/internal/operator"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
-	"go.uber.org/zap/zapcore"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -34,8 +37,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	livekitstunnerl7mpiov1alpha1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	livekitstunnerl7mpiov1alpha1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -102,6 +106,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.LiveKitMeshReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "LiveKitMesh")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
