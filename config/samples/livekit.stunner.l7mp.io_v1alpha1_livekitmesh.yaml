@@ -9,28 +9,27 @@ metadata:
     app.kubernetes.io/created-by: livekit-operator
   name: livekitmesh-sample
 spec:
-  spec:
-    components:
-      liveKit:
-        deployment:
-          replicas: 2 #opt
-          # container template
-          container:
-            image: dummy-repo/dummy-image:dummy-tag
-            imagePullPolicy: IfNotPresent
-            #          args: # TODO
-            #          command: # TODO
-            #          env: # TODO
-            #          terminationGracePeriodSeconds: 3600
-            #          affinity: # TODO
-            resources:
-              limits:
-                cpu: 2
-                memory: 512Mi
-              requests:
-                cpu: 500m
-                memory: 128Mi
-  #      service:
+  components:
+    liveKit:
+      deployment:
+        replicas: 2 #opt
+        # container template
+        container:
+          image: dummy-repo/dummy-image:dummy-tag
+          imagePullPolicy: IfNotPresent
+          #          args: # TODO
+          #          command: # TODO
+          #          env: # TODO
+          #          terminationGracePeriodSeconds: 3600
+          #          affinity: # TODO
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+#      service:
   #        name: lk-control
   #        type: LoadBalancer
   #        ports:

@@ -59,6 +59,21 @@ spec:
                     properties:
                       deployment:
                         properties:
+                          configMap:
+                            description: ConfigMap holds the configuration for the
+                              livekit server that is executed.
+                            properties:
+                              name:
+                                description: Name is the name of the configMap resource
+                                type: string
+                              namespace:
+                                description: Namespace is the namespace of the configMap
+                                  resource
+                                type: string
+                            required:
+                            - name
+                            - namespace
+                            type: object
                           container:
                             description: Container template for the containers created
                               in each Pod in the replicaset. If omitted the default
@@ -1559,6 +1574,8 @@ spec:
                               Defaults to 1.
                             format: int32
                             type: integer
+                        required:
+                        - configMap
                         type: object
                       type:
                         default: livekit
