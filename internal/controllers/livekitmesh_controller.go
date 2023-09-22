@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	"github.com/l7mp/livekit-operator/internal/renderer"
+	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -76,9 +78,87 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	log := r.Log.WithValues("livekit", req.String())
 	log.Info("reconciling")
 
-	var liveKitList []client.Object
+	liveKitMesh := &lkstnv1a1.LiveKitMesh{}
 	defaultConfigMap := &corev1.ConfigMap{}
-	//find all configMaps purposed for the operator
+
+	if err := r.Get(ctx, req.NamespacedName, liveKitMesh); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("no LiveKitMesh resource found")
+		} else {
+			return ctrl.Result{}, err
+		}
+	} else {
+		log.Info("LiveKitMesh resource found", "name", req.Name)
+		log.Info("store length", "len", store.LiveKitMeshes.Len())
+		isEqual := store.GetNamespacedName(liveKitMesh) == req.NamespacedName
+		log.Info("Namespaced name", "store", store.GetNamespacedName(liveKitMesh),
+			"request", req.NamespacedName,
+			"isEqual", isEqual)
+		if !isEqual {
+			panic("store namespacedname does not equal to request's namespacedname")
+			//TODO delete this later and solve the issue
+		}
+
+		log.Info("livekitmeshes.get", "key", store.LiveKitMeshes.Get(store.GetNamespacedName(liveKitMesh)))
+		log.Info("store length", "len", store.LiveKitMeshes.Len())
+
+		//if it does not exist store it
+		if ok := store.LiveKitMeshes.Get(store.GetNamespacedName(liveKitMesh)); ok == nil {
+			log.Info("New LiveKitMesh found, storing it", "name", liveKitMesh.Name)
+			store.LiveKitMeshes.Upsert(liveKitMesh)
+			if store.LiveKitMeshes.IsConfigMapReadyForMesh(liveKitMesh) {
+				renderer.RenderLiveKitMesh(liveKitMesh)
+				// renderCH <- livekitMesh
+				// return ctrl.Result{}, nil
+				// TODO
+			} else {
+				return ctrl.Result{}, nil
+			}
+		} else {
+			//TODO lkmesh was already stored, handle this as well
+			//TODO check if has been changed etc
+			return ctrl.Result{}, nil
+		}
+	}
+
+	log.Info("If we reach this LoC livekitmesh var should be nil", "liveKitMesh", liveKitMesh)
+	log.Info("Trying to get get the corresponding configMap", "configmap", req.NamespacedName)
+	if err := r.Get(ctx, req.NamespacedName, defaultConfigMap); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("no default config map found")
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	} else {
+		isEqual := store.GetNamespacedName(defaultConfigMap) == req.NamespacedName
+		log.Info("Namespaced name", "store", store.GetNamespacedName(liveKitMesh),
+			"request", req.NamespacedName,
+			"isEqual", isEqual)
+		if !isEqual {
+			panic("store namespacedname does not equal to request's namespacedname")
+			//TODO delete this later and solve the issue
+		}
+		//if it does not exist store it
+		if ok := store.ConfigMaps.Get(req.NamespacedName); ok == nil {
+			log.Info("New ConfigMap found, storing it", "name", defaultConfigMap.Name)
+			store.ConfigMaps.Upsert(defaultConfigMap)
+			if liveKitMeshes := store.ConfigMaps.GetLiveKitMeshesBasedOnConfigMap(defaultConfigMap); liveKitMeshes != nil {
+				for _, mesh := range liveKitMeshes {
+					mesh := mesh
+					renderer.RenderLiveKitMesh(mesh)
+				}
+			}
+		} else {
+			//TODO configmap was already stored, handle this as well
+			//TODO check if has been changed etc
+			return ctrl.Result{}, nil
+		}
+
+		//TODO set the freshly found cm as the config
+	}
+
+	// if a configmap change has triggered the reconciliation loop then read it
+	// and try to find the corresponding lkmesh in the store
 	if err := r.Get(ctx, req.NamespacedName, defaultConfigMap); err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("no default config map found")
@@ -87,20 +167,8 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	} else {
 		log.Info(defaultConfigMap.String())
-	}
-
-	// find all LiveKitMesh
-	lkList := &lkstnv1a1.LiveKitMeshList{}
-	if err := r.List(ctx, lkList); err != nil {
-		log.Info("no LiveKitMesh resource found")
-		return ctrl.Result{}, err
-	}
-
-	for _, i := range lkList.Items {
-		lk := i
-		log.V(1).Info("processing LiveKitMesh")
-
-		liveKitList = append(liveKitList, &lk)
+		//TODO solve what happens when a new configmap has been found
+		//TODO fetch corresponding livekitmeshes from store
 	}
 
 	return ctrl.Result{}, nil

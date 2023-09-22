@@ -89,6 +89,15 @@ type Container struct {
 	// MetricsEndpointPort *int `json:"metricsEndpointPort,omitempty"`
 }
 
+// ConfigMapNamespacedName is the namespaced name of the configmap that stores
+// the base configuration for a given LiveKit container
+type ConfigMapNamespacedName struct {
+	// Namespace is the namespace of the configMap resource
+	Namespace *string `json:"namespace"`
+	// Name is the name of the configMap resource
+	Name *string `json:"name"`
+}
+
 type Deployment struct {
 
 	// Number of desired pods. This is a pointer to distinguish between explicit zero and not
@@ -104,10 +113,10 @@ type Deployment struct {
 	// +optional
 	Container *Container `json:"container"`
 
-	/*	// Config holds the configuration for the livekit server that is executed.
-		//
-		//
-		Config *Config `json:"config"`*/
+	// ConfigMap holds the configuration for the livekit server that is executed.
+	//
+	//
+	ConfigMap *ConfigMapNamespacedName `json:"configMap"`
 }
 
 type LiveKit struct {
