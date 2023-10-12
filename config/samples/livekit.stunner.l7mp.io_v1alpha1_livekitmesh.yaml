@@ -13,6 +13,9 @@ spec:
     liveKit:
       deployment:
         replicas: 2 #opt
+        configMap:
+          name: default-livekit-config
+          namespace: default
         # container template
         container:
           image: dummy-repo/dummy-image:dummy-tag

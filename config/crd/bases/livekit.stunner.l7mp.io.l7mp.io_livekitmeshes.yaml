@@ -1593,10 +1593,6 @@ spec:
                 required:
                 - liveKit
                 type: object
-              foo:
-                description: Foo is an example field of LiveKitMesh. Edit livekitmesh_types.go
-                  to remove/update
-                type: string
             required:
             - components
             type: object
