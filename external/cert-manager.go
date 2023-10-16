@@ -3,7 +3,6 @@ package external
 import (
 	"context"
 	"github.com/go-logr/logr"
-	"github.com/l7mp/livekit-operator/internal/defaults"
 	helmClient "github.com/mittwald/go-helm-client"
 	"github.com/mittwald/go-helm-client/values"
 	"helm.sh/helm/v3/pkg/repo"
@@ -33,7 +32,7 @@ func (e *CertManager) InstallChart(ctx context.Context, logger logr.Logger) erro
 
 	opt := &helmClient.Options{
 		//TODO
-		Namespace:        defaults.CertManagerChartNamespace, // Change this to the namespace you wish the client to operate in.
+		Namespace:        CertManagerChartNamespace, // Change this to the namespace you wish the client to operate in.
 		RepositoryCache:  "/tmp/.helmcache",
 		RepositoryConfig: "/tmp/.helmrepo",
 		Debug:            true,
@@ -58,7 +57,7 @@ func (e *CertManager) InstallChart(ctx context.Context, logger logr.Logger) erro
 		ReleaseName:     "cert-manager",
 		ChartName:       "jetstack/cert-manager",
 		CreateNamespace: true,
-		Namespace:       defaults.CertManagerChartNamespace,
+		Namespace:       CertManagerChartNamespace,
 		UpgradeCRDs:     true,
 		Wait:            true,
 		WaitForJobs:     true,
