@@ -147,6 +147,10 @@ type Monitoring struct {
 	//TODO
 }
 
+type Gateway struct {
+	Defaults bool `json:"defaults"`
+}
+
 type Component struct {
 
 	// LiveKit is the main resource that the operator manages. By default, it supports
@@ -169,6 +173,9 @@ type Component struct {
 	//
 	// +optional
 	Egress *Egress `json:"egress,omitempty"`
+
+	// Gateway field should hold the configuration for the Envoy Gateway deployment
+	Gateway *Gateway `json:"gateway"`
 
 	// CertManager manages the cert
 	//TODO

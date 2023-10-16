@@ -1,11 +1,27 @@
 package renderer
 
 import (
-	"github.com/go-logr/logr"
-	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
+	"github.com/l7mp/livekit-operator/internal/event"
+	"github.com/l7mp/livekit-operator/internal/store"
 )
 
-func RenderLiveKitMesh(mesh *lkstnv1a1.LiveKitMesh) {
+func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
+	log := r.logger.WithName("RenderLiveKitMesh")
+	log.Info("Trying to render LiveKitMeshes")
 	//TODO render each component in the livekitmesh
-	logr.Logger{}.Info("Renderlivekitmesh", "lkname", mesh.Name)
+	r.gen += 1
+
+	if liveKitMeshes := store.LiveKitMeshes.GetAll(); len(liveKitMeshes) == 0 {
+		log.Info("no LiveKitMesh objects found", "event", e.String())
+		//TODO maybe return here?
+	} else {
+
+		for _, lkMesh := range liveKitMeshes {
+			log.Info("Found in store", "lk", lkMesh.Name)
+			lkMesh := lkMesh
+			renderContext := NewRenderContext(e, r, lkMesh)
+			_ = renderContext
+			//renderContext.lkMesh
+		}
+	}
 }

@@ -8,7 +8,7 @@ const (
 	DefaultLabelKeyForConfigMap = "l7mp.io/livekit-config"
 
 	// DefaultLabelValueForConfigMap is a label value
-	DefaultLabelValueForConfigMap = "livekit-config"
+	DefaultLabelValueForConfigMap = "livekitmesh-config"
 
 	// DefaultNamespaceForConfigMap is the default namespaced name of base livekit config map
 	DefaultNamespaceForConfigMap = "default"

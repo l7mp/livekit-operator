@@ -5,7 +5,7 @@ metadata:
   name: default-livekit-config
   namespace: default
   labels:
-    l7mp.io/livekit-config: livekit-config
+    l7mp.io/livekit-config: livekitmesh-config
 data:
   config.yaml: |
     # access_token must be at least 32 chars long

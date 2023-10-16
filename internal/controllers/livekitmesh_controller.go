@@ -18,20 +18,18 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-logr/logr"
-	"github.com/l7mp/livekit-operator/internal/renderer"
+	ievent "github.com/l7mp/livekit-operator/internal/event"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,22 +39,24 @@ import (
 // LiveKitMeshReconciler reconciles a LiveKitMesh object
 type LiveKitMeshReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Log    logr.Logger
+	eventCh chan ievent.Event
+	Scheme  *runtime.Scheme
+	Log     logr.Logger
 }
 
 //+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes/finalizers,verbs=update
 
-func RegisterLiveKitMeshController(mgr manager.Manager, logger logr.Logger) error {
+func RegisterLiveKitMeshController(mgr manager.Manager, ch chan ievent.Event, logger logr.Logger) error {
 	//ctx := context.Background()
 	log := logger.WithName("RegisterLiveKitMeshController")
 
 	if err := (&LiveKitMeshReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    logger,
+		Client:  mgr.GetClient(),
+		eventCh: ch,
+		Scheme:  mgr.GetScheme(),
+		Log:     logger,
 	}).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create controller", "controller", "LiveKitMesh")
 		os.Exit(1)
@@ -75,102 +75,44 @@ func RegisterLiveKitMeshController(mgr manager.Manager, logger logr.Logger) erro
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("livekit", req.String())
+	log := r.Log.WithValues("LiveKitMesh Reconciler", req.String())
 	log.Info("reconciling")
 
-	liveKitMesh := &lkstnv1a1.LiveKitMesh{}
-	defaultConfigMap := &corev1.ConfigMap{}
+	var liveKitMeshList []client.Object
+	var configMapList []client.Object
 
-	if err := r.Get(ctx, req.NamespacedName, liveKitMesh); err != nil {
-		if errors.IsNotFound(err) {
-			log.Info("no LiveKitMesh resource found")
-		} else {
-			return ctrl.Result{}, err
-		}
-	} else {
-		log.Info("LiveKitMesh resource found", "name", req.Name)
-		log.Info("store length", "len", store.LiveKitMeshes.Len())
-		isEqual := store.GetNamespacedName(liveKitMesh) == req.NamespacedName
-		log.Info("Namespaced name", "store", store.GetNamespacedName(liveKitMesh),
-			"request", req.NamespacedName,
-			"isEqual", isEqual)
-		if !isEqual {
-			panic("store namespacedname does not equal to request's namespacedname")
-			//TODO delete this later and solve the issue
-		}
-
-		log.Info("livekitmeshes.get", "key", store.LiveKitMeshes.Get(store.GetNamespacedName(liveKitMesh)))
-		log.Info("store length", "len", store.LiveKitMeshes.Len())
-
-		//if it does not exist store it
-		if ok := store.LiveKitMeshes.Get(store.GetNamespacedName(liveKitMesh)); ok == nil {
-			log.Info("New LiveKitMesh found, storing it", "name", liveKitMesh.Name)
-			store.LiveKitMeshes.Upsert(liveKitMesh)
-			if store.LiveKitMeshes.IsConfigMapReadyForMesh(liveKitMesh) {
-				renderer.RenderLiveKitMesh(liveKitMesh)
-				// renderCH <- livekitMesh
-				// return ctrl.Result{}, nil
-				// TODO
-			} else {
-				return ctrl.Result{}, nil
-			}
-		} else {
-			//TODO lkmesh was already stored, handle this as well
-			//TODO check if has been changed etc
-			return ctrl.Result{}, nil
-		}
-	}
-
-	log.Info("If we reach this LoC livekitmesh var should be nil", "liveKitMesh", liveKitMesh)
-	log.Info("Trying to get get the corresponding configMap", "configmap", req.NamespacedName)
-	if err := r.Get(ctx, req.NamespacedName, defaultConfigMap); err != nil {
-		if errors.IsNotFound(err) {
-			log.Info("no default config map found")
-			return ctrl.Result{}, nil
-		}
+	//find liveKitMesh resources in the cluster
+	liveKitMeshes := &lkstnv1a1.LiveKitMeshList{}
+	if err := r.List(ctx, liveKitMeshes); err != nil {
+		log.Error(err, "error obtaining LiveKitMesh objects")
 		return ctrl.Result{}, err
 	} else {
-		isEqual := store.GetNamespacedName(defaultConfigMap) == req.NamespacedName
-		log.Info("Namespaced name", "store", store.GetNamespacedName(liveKitMesh),
-			"request", req.NamespacedName,
-			"isEqual", isEqual)
-		if !isEqual {
-			panic("store namespacedname does not equal to request's namespacedname")
-			//TODO delete this later and solve the issue
+		for _, lkm := range liveKitMeshes.Items {
+			lkm := lkm
+			//TODO if this controller handles it (in case if multiple operators and controllers are running
+			liveKitMeshList = append(liveKitMeshList, &lkm)
 		}
-		//if it does not exist store it
-		if ok := store.ConfigMaps.Get(req.NamespacedName); ok == nil {
-			log.Info("New ConfigMap found, storing it", "name", defaultConfigMap.Name)
-			store.ConfigMaps.Upsert(defaultConfigMap)
-			if liveKitMeshes := store.ConfigMaps.GetLiveKitMeshesBasedOnConfigMap(defaultConfigMap); liveKitMeshes != nil {
-				for _, mesh := range liveKitMeshes {
-					mesh := mesh
-					renderer.RenderLiveKitMesh(mesh)
-				}
-			}
-		} else {
-			//TODO configmap was already stored, handle this as well
-			//TODO check if has been changed etc
-			return ctrl.Result{}, nil
-		}
-
-		//TODO set the freshly found cm as the config
 	}
 
-	// if a configmap change has triggered the reconciliation loop then read it
-	// and try to find the corresponding lkmesh in the store
-	if err := r.Get(ctx, req.NamespacedName, defaultConfigMap); err != nil {
-		if errors.IsNotFound(err) {
-			log.Info("no default config map found")
-			return ctrl.Result{}, nil
-		}
+	//find configMap resources in the cluster
+	configMaps := &corev1.ConfigMapList{}
+	if err := r.List(ctx, configMaps); err != nil {
+		log.Error(err, "error obtaining ConfigMap objects")
 		return ctrl.Result{}, err
 	} else {
-		log.Info(defaultConfigMap.String())
-		//TODO solve what happens when a new configmap has been found
-		//TODO fetch corresponding livekitmeshes from store
+		for _, cfgmp := range configMaps.Items {
+			//TODO if this controller handles it (in case if multiple operators and controllers are running
+			configMapList = append(configMapList, &cfgmp)
+		}
 	}
 
+	store.LiveKitMeshes.Reset(liveKitMeshList)
+	log.Info("reset LiveKitMesh store", "lkmeshes", store.LiveKitMeshes.String())
+
+	store.ConfigMaps.Reset(configMapList)
+	log.Info("reset ConfigMap store", "configmaps", store.ConfigMaps.String())
+
+	r.eventCh <- ievent.NewEventRender()
 	return ctrl.Result{}, nil
 }
 
@@ -194,7 +136,7 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			UpdateFunc: func(e event.UpdateEvent) bool {
 				// Add your custom logic to filter ConfigMap update events
 				configMap, ok := e.ObjectNew.(*corev1.ConfigMap)
-				fmt.Println("update func", configMap)
+				//fmt.Println("update func", configMap)
 				if ok {
 					// Return true if you want to enqueue the event, false otherwise
 					return shouldEnqueue(configMap)
@@ -204,7 +146,7 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			DeleteFunc: func(e event.DeleteEvent) bool {
 				// Add your custom logic to filter ConfigMap deletion events
 				configMap, ok := e.Object.(*corev1.ConfigMap)
-				fmt.Println("delete func", shouldEnqueue(configMap))
+				//fmt.Println("delete func", shouldEnqueue(configMap))
 				if ok {
 					// Return true if you want to enqueue the event, false otherwise
 					return shouldEnqueue(configMap)

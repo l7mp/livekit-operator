@@ -45,6 +45,15 @@ spec:
                       it possible to stream a single user's or any number of users'
                       streams out of a room onto an RTMP port.
                     type: object
+                  gateway:
+                    description: Gateway field should hold the configuration for the
+                      Envoy Gateway deployment
+                    properties:
+                      defaults:
+                        type: boolean
+                    required:
+                    - defaults
+                    type: object
                   ingress:
                     description: LiveKit's Ingress resource descriptor. This resource
                       makes it possible to stream videos(prerecorded or live) into
@@ -1591,6 +1600,7 @@ spec:
                       corresponding resources
                     type: object
                 required:
+                - gateway
                 - liveKit
                 type: object
             required:
