@@ -65,6 +65,7 @@ func (e *StunnerGatewayOperator) InstallChart(ctx context.Context, logger logr.L
 		ValuesOptions: values.Options{Values: []string{
 			"stunnerGatewayOperator.dataplane.mode=managed",
 		}},
+		//ValuesYaml: TODO
 	})
 	// Install or upgrade a chart.
 	go func() {

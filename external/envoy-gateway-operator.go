@@ -40,12 +40,15 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 	}
 
 	e.SetChartSpec(helmClient.ChartSpec{
-		ReleaseName:     "eg",
-		Version:         "v0.0.0-latest",
+		ReleaseName: "eg",
+		//Version:         "v0.0.0-latest",
+		//FIXME v0.0.0 uses Gateway API v1 instead of v1b1 so we need to stuck to the v0.5.0 (latest stable)
+		Version:         "v0.5.0",
 		ChartName:       "oci://docker.io/envoyproxy/gateway-helm",
 		CreateNamespace: true,
 		Namespace:       EnvoyGatewayChartNamespace,
 		UpgradeCRDs:     true,
+		SkipCRDs:        true,
 		Wait:            true,
 		WaitForJobs:     true,
 		Timeout:         3 * time.Minute,
