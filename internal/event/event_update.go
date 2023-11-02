@@ -8,6 +8,8 @@ import (
 type UpdateConf struct {
 	ConfigMaps    *store.ConfigMapStore
 	LiveKitMeshes *store.LiveKitMeshStore
+	Services      *store.ServiceStore
+	Deployments   *store.DeploymentStore
 }
 
 type Update struct {
@@ -24,10 +26,13 @@ func NewEventUpdate(generation int) *Update {
 		UpsertQueue: UpdateConf{
 			LiveKitMeshes: store.NewLivekitMeshStore(),
 			ConfigMaps:    store.NewConfigMapStore(),
+			Services:      store.NewServiceStore(),
+			Deployments:   store.NewDeploymentStore(),
 		},
 		DeleteQueue: UpdateConf{
 			LiveKitMeshes: store.NewLivekitMeshStore(),
 			ConfigMaps:    store.NewConfigMapStore(),
+			//FIXME not everything should be deleted/handled by us that what other operators should do
 		},
 		Generation: generation,
 	}

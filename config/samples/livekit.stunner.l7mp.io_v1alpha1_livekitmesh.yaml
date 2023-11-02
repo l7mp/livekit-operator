@@ -8,14 +8,15 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: livekit-operator
   name: livekitmesh-sample
+  namespace: default
 spec:
   components:
     liveKit:
       deployment:
         replicas: 2 #opt
-        configMap:
-          name: default-livekit-config
-          namespace: default
+        configMap: default-livekit-config
+#          name: default-livekit-config
+#          namespace: default
         # container template
         container:
           image: dummy-repo/dummy-image:dummy-tag
@@ -32,6 +33,13 @@ spec:
             requests:
               cpu: 500m
               memory: 128Mi
+    gateway:
+      relatedStunnerGatewayAnnotations:
+        name: udp-gateway
+        namespace: stunner-gateway-system
+  stunner: # TODO
+    values:
+      key: val
 #      service:
   #        name: lk-control
   #        type: LoadBalancer

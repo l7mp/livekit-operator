@@ -46,13 +46,29 @@ spec:
                       streams out of a room onto an RTMP port.
                     type: object
                   gateway:
-                    description: Gateway field should hold the configuration for the
-                      Envoy Gateway deployment
+                    description: Gateway field should hold the configuration for ANY
+                      Gateway deployments in the cluster (STUNner and Envoy)
                     properties:
-                      defaults:
-                        type: boolean
+                      relatedStunnerGatewayAnnotations:
+                        description: RelatedStunnerGatewayAnnotations is the name
+                          of the related gateway name for STUNner When deploying the
+                          LiveKit server pod we need to know the external IP of the
+                          LB SVC that was created based on the very given GW The value
+                          of this filed will be present in the SVC's annotation list
+                        properties:
+                          name:
+                            description: Name is the name of the configMap resource
+                            type: string
+                          namespace:
+                            description: Namespace is the namespace of the configMap
+                              resource
+                            type: string
+                        required:
+                        - name
+                        - namespace
+                        type: object
                     required:
-                    - defaults
+                    - relatedStunnerGatewayAnnotations
                     type: object
                   ingress:
                     description: LiveKit's Ingress resource descriptor. This resource
@@ -67,22 +83,16 @@ spec:
                       but in the future it might support other media servers as well.
                     properties:
                       deployment:
+                        description: Deployment holds the configuration for the future
+                          Deployment manifest that will be created by the operator.
                         properties:
                           configMap:
-                            description: ConfigMap holds the configuration for the
-                              livekit server that is executed.
-                            properties:
-                              name:
-                                description: Name is the name of the configMap resource
-                                type: string
-                              namespace:
-                                description: Namespace is the namespace of the configMap
-                                  resource
-                                type: string
-                            required:
-                            - name
-                            - namespace
-                            type: object
+                            description: "ConfigMap holds the configuration for the
+                              livekit server that is executed. TODO in the future
+                              we should make a copy from the configmap into the namespace
+                              the lkmesh was deployed to \n ConfigMap *NamespacedName
+                              `json:\"configMap\"`"
+                            type: string
                           container:
                             description: Container template for the containers created
                               in each Pod in the replicaset. If omitted the default
@@ -1263,6 +1273,7 @@ spec:
                                 description: If specified, the health-check port.
                                 type: integer
                               hostNetwork:
+                                default: false
                                 description: Host networking requested for the stunnerd
                                   pod to use the host's network namespace. Can be
                                   used to implement public TURN servers with Kubernetes.  Defaults
@@ -1577,10 +1588,17 @@ spec:
                                   type: object
                                 type: array
                             type: object
+                          name:
+                            default: livekit-server
+                            description: Name is the name of the Deployment that will
+                              be created. Optional, if not filled default name 'livekit'
+                              will be used Note that the same namespace will be used
+                              as the CR was deployed into.
+                            type: string
                           replicas:
-                            description: Number of desired pods. This is a pointer
-                              to distinguish between explicit zero and not specified.
-                              Defaults to 1.
+                            description: Replicas Number of desired pods. This is
+                              a pointer to distinguish between explicit zero and not
+                              specified. Defaults to 1.
                             format: int32
                             type: integer
                         required:

@@ -103,8 +103,9 @@ func main() {
 
 	setupLog.Info("setting up renderer")
 	r := renderer.NewRenderer(renderer.Config{
-		Scheme: scheme,
-		Logger: logger,
+		Scheme:  scheme,
+		Manager: mgr,
+		Logger:  logger,
 	})
 
 	setupLog.Info("setting up operator")

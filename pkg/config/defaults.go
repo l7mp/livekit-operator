@@ -15,4 +15,36 @@ const (
 
 	// DefaultNameForConfigMap is the default namespaced name of base livekit config map
 	DefaultNameForConfigMap = "default-livekit-config"
+
+	// OwnedByLabelKey is the name of the label that is used to mark resources (Services,
+	// ConfigMaps, and Deployments) dynamically created and maintained by the operator. Note
+	// that the Deployments and Services created by the operator will have both the AppLabelKey
+	// and the OwnedByLabelKey labels set.
+	OwnedByLabelKey = "livekit.stunner.l7mp.io/owned-by"
+
+	// OwnedByLabelValue is the value of OwnedByLabelKey to indicate that a resource is
+	// maintained by the operator.
+	OwnedByLabelValue = "livekitmesh-operator"
+
+	// RelatedLiveKitMeshKey is the name of the label that is used to mark resources (Services,
+	// ConfigMaps, and Deployments) dynamically created and maintained by the operator. Note
+	// that the Deployments and Services created by the operator will have both the AppLabelKey
+	// and the OwnedByLabelKey labels set.
+	RelatedLiveKitMeshKey = "livekit.stunner.l7mp.io/livekit-mesh-name"
+)
+
+// Statuses for the LiveKitMesh
+const (
+	// StatusNone Component is not present.
+	StatusNone = "NONE"
+	// StatusUpdating Component is being updated to a different version.
+	StatusUpdating = "UPDATING"
+	// StatusReconciling Controller has started but not yet completed reconciliation loop for the component.
+	StatusReconciling = "RECONCILING"
+	// StatusHealthy Component is healthy.
+	StatusHealthy = "HEALTHY"
+	// StatusError Component is in an error state.
+	StatusError = "ERROR"
+	// StatusActionRequired Action is needed from the user for reconciliation to proceed
+	StatusActionRequired = "ACTION_REQUIRED"
 )

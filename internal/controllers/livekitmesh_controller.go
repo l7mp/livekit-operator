@@ -44,10 +44,6 @@ type LiveKitMeshReconciler struct {
 	Log     logr.Logger
 }
 
-//+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=livekit.stunner.l7mp.io.l7mp.io,resources=livekitmeshes/finalizers,verbs=update
-
 func RegisterLiveKitMeshController(mgr manager.Manager, ch chan ievent.Event, logger logr.Logger) error {
 	//ctx := context.Background()
 	log := logger.WithName("RegisterLiveKitMeshController")
@@ -80,6 +76,7 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	var liveKitMeshList []client.Object
 	var configMapList []client.Object
+	var serviceList []client.Object
 
 	//find liveKitMesh resources in the cluster
 	liveKitMeshes := &lkstnv1a1.LiveKitMeshList{}
@@ -101,8 +98,27 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		return ctrl.Result{}, err
 	} else {
 		for _, cfgmp := range configMaps.Items {
+			cfgmp := cfgmp
 			//TODO if this controller handles it (in case if multiple operators and controllers are running
-			configMapList = append(configMapList, &cfgmp)
+			if shouldEnqueueConfigMap(&cfgmp) {
+				configMapList = append(configMapList, &cfgmp)
+			}
+		}
+	}
+
+	//find services resources in the cluster
+	services := &corev1.ServiceList{}
+	if err := r.List(ctx, services); err != nil {
+		log.Error(err, "error obtaining Service objects")
+		return ctrl.Result{}, err
+	} else {
+		log.Info("Num of services found", "num", len(services.Items))
+		for _, service := range services.Items {
+			service := service
+			//TODO if this controller handles it (in case if multiple operators and controllers are running
+			if shouldEnqueueService(&service) {
+				serviceList = append(serviceList, &service)
+			}
 		}
 	}
 
@@ -111,6 +127,9 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	store.ConfigMaps.Reset(configMapList)
 	log.Info("reset ConfigMap store", "configmaps", store.ConfigMaps.String())
+
+	store.Services.Reset(serviceList)
+	log.Info("reset Service store", "services", store.Services.String())
 
 	r.eventCh <- ievent.NewEventRender()
 	return ctrl.Result{}, nil
@@ -123,13 +142,15 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&lkstnv1a1.LiveKitMesh{})
 	controller = controller.
 		Watches(&corev1.ConfigMap{}, &handler.EnqueueRequestForObject{}).
+		Watches(&corev1.Service{}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
 				// Add your custom logic to filter ConfigMap creation events
-				configMap, ok := e.Object.(*corev1.ConfigMap)
-				if ok {
+				if configMap, ok := e.Object.(*corev1.ConfigMap); ok {
 					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueue(configMap)
+					return shouldEnqueueConfigMap(configMap)
+				} else if service, ok := e.Object.(*corev1.Service); ok {
+					return shouldEnqueueService(service)
 				}
 				return true
 			},
@@ -139,17 +160,21 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				//fmt.Println("update func", configMap)
 				if ok {
 					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueue(configMap)
+					return shouldEnqueueConfigMap(configMap)
+				} else if service, ok := e.ObjectNew.(*corev1.Service); ok {
+					return shouldEnqueueService(service)
 				}
 				return true
 			},
 			DeleteFunc: func(e event.DeleteEvent) bool {
 				// Add your custom logic to filter ConfigMap deletion events
 				configMap, ok := e.Object.(*corev1.ConfigMap)
-				//fmt.Println("delete func", shouldEnqueue(configMap))
+				//fmt.Println("delete func", shouldEnqueueConfigMap(configMap))
 				if ok {
 					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueue(configMap)
+					return shouldEnqueueConfigMap(configMap)
+				} else if service, ok := e.Object.(*corev1.Service); ok {
+					return shouldEnqueueService(service)
 				}
 				return true
 			},
@@ -159,10 +184,18 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Add your custom filtering logic here
-func shouldEnqueue(configMap *corev1.ConfigMap) bool {
+func shouldEnqueueConfigMap(configMap *corev1.ConfigMap) bool {
 	// For example, you can check some condition on the ConfigMap
 	// and decide whether to enqueue it or not.
 	// Return true to enqueue, false to skip.
 	// Modify this logic according to your requirements.
+	//fmt.Println("shouldEnqueueConfigMap", "configmap", configMap.Name, "bool", configMap.Labels[opdefault.DefaultLabelKeyForConfigMap] == opdefault.DefaultLabelValueForConfigMap)
 	return configMap.Labels[opdefault.DefaultLabelKeyForConfigMap] == opdefault.DefaultLabelValueForConfigMap
+}
+
+// Add your custom filtering logic here
+func shouldEnqueueService(svc *corev1.Service) bool {
+	_, ok := svc.Annotations["stunner.l7mp.io/related-gateway-name"]
+	return ok
+
 }

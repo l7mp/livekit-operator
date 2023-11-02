@@ -1,7 +1,6 @@
 package store
 
 import (
-	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -53,17 +52,17 @@ func (s *ConfigMapStore) GetObject(nsName types.NamespacedName) *corev1.ConfigMa
 	return r
 }
 
-func (l *ConfigMapStore) GetLiveKitMeshesBasedOnConfigMap(configMap *corev1.ConfigMap) []*lkstnv1a1.LiveKitMesh {
-	var livekitMeshes []*lkstnv1a1.LiveKitMesh
-	storedLiveKitMeshes := LiveKitMeshes.GetAll()
-	for _, mesh := range storedLiveKitMeshes {
-		mesh := mesh
-		if *GetConfigMapsNamespacedNameFromLiveKitMesh(mesh) == GetNamespacedName(configMap) {
-			livekitMeshes = append(livekitMeshes, mesh)
-		}
-	}
-	return livekitMeshes
-}
+//func (l *ConfigMapStore) GetLiveKitMeshesBasedOnConfigMap(configMap *corev1.ConfigMap) []*lkstnv1a1.LiveKitMesh {
+//	var livekitMeshes []*lkstnv1a1.LiveKitMesh
+//	storedLiveKitMeshes := LiveKitMeshes.GetAll()
+//	for _, mesh := range storedLiveKitMeshes {
+//		mesh := mesh
+//		if *GetConfigMapsNamespacedNameFromLiveKitMesh(mesh) == GetNamespacedName(configMap) {
+//			livekitMeshes = append(livekitMeshes, mesh)
+//		}
+//	}
+//	return livekitMeshes
+//}
 
 // // AddConfigMap adds a ConfigMap object to the the global storage (this is used mainly for testing)
 // func (s *ConfigMapStore) AddConfigMap(gc *corev1.ConfigMap) {

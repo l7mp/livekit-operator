@@ -2,6 +2,7 @@ package store
 
 import (
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var LiveKitMeshes = NewLivekitMeshStore()
@@ -16,15 +17,16 @@ func NewLivekitMeshStore() *LiveKitMeshStore {
 	}
 }
 
-func (l *LiveKitMeshStore) IsConfigMapReadyForMesh(mesh *lkstnv1a1.LiveKitMesh) bool {
+func (l *LiveKitMeshStore) IsConfigMapReadyForMesh(mesh *lkstnv1a1.LiveKitMesh) (bool, *v1.ConfigMap) {
 	storedConfigMaps := ConfigMaps.GetAll()
 	for _, configMap := range storedConfigMaps {
 		cm := configMap
 		if GetNamespacedName(cm) == *GetConfigMapsNamespacedNameFromLiveKitMesh(mesh) {
-			return true
+			return true, cm
 		}
 	}
-	return false
+	//fmt.Println("configmap is not ready", "storedConfigMaps", storedConfigMaps)
+	return false, nil
 }
 
 func (l *LiveKitMeshStore) GetAll() []*lkstnv1a1.LiveKitMesh {

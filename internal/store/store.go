@@ -151,7 +151,7 @@ func (s *storeImpl) Flush() {
 
 func (s *storeImpl) String() string {
 	os := s.Objects()
-	ret := []string{}
+	var ret []string
 	for _, o := range os {
 		ret = append(ret, GetObjectKey(o))
 	}
