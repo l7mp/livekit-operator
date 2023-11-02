@@ -1626,6 +1626,58 @@ spec:
             type: object
           status:
             description: LiveKitMeshStatus defines the observed state of LiveKitMesh
+            properties:
+              componentStatus:
+                additionalProperties:
+                  description: 'InstallStatus is the status of the component. Enum
+                    with the following possible values: -NONE meaning the component
+                    is not present -UPDATING meaning the component is being updated
+                    to a different version -RECONCILING meaning the controller has
+                    started but not yet completed reconciliation loop for the component
+                    -HEALTHY meaning the component is healthy -ERROR meaning a critical
+                    error happened to the component -ACTION_REQUIRED meaning there
+                    is a user action needed in order to proceed'
+                  enum:
+                  - NONE
+                  - UPDATING
+                  - RECONCILING
+                  - HEALTHY
+                  - ERROR
+                  - ACTION_REQUIRED
+                  type: string
+                description: ComponentStatus is a key-value store to signal the components'
+                  status after installation The map will give a brief overview for
+                  the user which component was successful or failed etc. THE FIELD
+                  IS POPULATED BY THE OPERATOR NOT BY THE USER. IT WILL BE OVERWRITTEN
+                type: object
+              configStatus:
+                description: ConfigStatus holds the current configuration for the
+                  LiveKit component if it is available in the cluster. nil meaning
+                  the ConfigMap provided is not present.
+                type: string
+              overallStatus:
+                description: "OverallStatus of all components controlled by the operator.
+                  \n * If all components have status `NONE`, overall status is `NONE`.
+                  * If all components are `HEALTHY`, overall status is `HEALTHY`.
+                  * If one or more components are `RECONCILING` and others are `HEALTHY`,
+                  overall status is `RECONCILING`. * If one or more components are
+                  `UPDATING` and others are `HEALTHY`, overall status is `UPDATING`.
+                  * If components are a mix of `RECONCILING`, `UPDATING` and `HEALTHY`,
+                  overall status is `UPDATING`. * If any component is in `ERROR` state,
+                  overall status is `ERROR`. * If further action is needed for reconciliation
+                  to proceed, overall status is `ACTION_REQUIRED`."
+                enum:
+                - NONE
+                - UPDATING
+                - RECONCILING
+                - HEALTHY
+                - ERROR
+                - ACTION_REQUIRED
+                type: string
+            required:
+            - componentStatus
+            - configStatus
+            - overallStatus
             type: object
         type: object
     served: true

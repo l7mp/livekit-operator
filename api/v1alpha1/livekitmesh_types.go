@@ -264,7 +264,7 @@ type LiveKitMeshStatus struct {
 	// ComponentStatus is a key-value store to signal the components' status after installation
 	// The map will give a brief overview for the user which component was successful or failed etc.
 	// THE FIELD IS POPULATED BY THE OPERATOR NOT BY THE USER. IT WILL BE OVERWRITTEN
-	ComponentStatus *map[string]InstallStatus
+	ComponentStatus *map[string]InstallStatus `json:"componentStatus"`
 
 	// OverallStatus of all components controlled by the operator.
 	//
@@ -276,12 +276,12 @@ type LiveKitMeshStatus struct {
 	// * If any component is in `ERROR` state, overall status is `ERROR`.
 	// * If further action is needed for reconciliation to proceed, overall status is `ACTION_REQUIRED`.
 	//
-	OverallStatus *InstallStatus
+	OverallStatus *InstallStatus `json:"overallStatus"`
 
 	// ConfigStatus holds the current configuration for the LiveKit component
 	// if it is available in the cluster. nil meaning the ConfigMap provided is not present.
 	//
-	ConfigStatus *string
+	ConfigStatus *string `json:"configStatus"`
 }
 
 //+kubebuilder:object:root=true
