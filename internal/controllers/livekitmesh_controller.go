@@ -22,18 +22,28 @@ import (
 	ievent "github.com/l7mp/livekit-operator/internal/event"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/event"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
+)
+
+const (
+	serviceLiveKitIndex    = "serviceLiveKitIndex"
+	configMapLiveKitIndex  = ".spec.components.liveKit.deployment.configMap"
+	deploymentLiveKitIndex = "deploymentLiveKitIndex"
 )
 
 // LiveKitMeshReconciler reconciles a LiveKitMesh object
@@ -45,7 +55,6 @@ type LiveKitMeshReconciler struct {
 }
 
 func RegisterLiveKitMeshController(mgr manager.Manager, ch chan ievent.Event, logger logr.Logger) error {
-	//ctx := context.Background()
 	log := logger.WithName("RegisterLiveKitMeshController")
 
 	if err := (&LiveKitMeshReconciler{
@@ -77,6 +86,7 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var liveKitMeshList []client.Object
 	var configMapList []client.Object
 	var serviceList []client.Object
+	var deploymentList []client.Object
 
 	//find liveKitMesh resources in the cluster
 	liveKitMeshes := &lkstnv1a1.LiveKitMeshList{}
@@ -93,7 +103,13 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	//find configMap resources in the cluster
 	configMaps := &corev1.ConfigMapList{}
-	if err := r.List(ctx, configMaps); err != nil {
+	listOps := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.DefaultLabelKeyForConfigMap: opdefault.DefaultLabelValueForConfigMap,
+			}),
+	}
+	if err := r.List(ctx, configMaps, listOps); err != nil {
 		log.Error(err, "error obtaining ConfigMap objects")
 		return ctrl.Result{}, err
 	} else {
@@ -108,17 +124,45 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	//find services resources in the cluster
 	services := &corev1.ServiceList{}
-	if err := r.List(ctx, services); err != nil {
+	listOpsSvc1 := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
+			}),
+	}
+	listOpsSvc2 := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				"stunner.l7mp.io/owned-by": "stunner",
+			}),
+	}
+	if err := r.List(ctx, services, listOpsSvc1, listOpsSvc2); err != nil {
 		log.Error(err, "error obtaining Service objects")
 		return ctrl.Result{}, err
 	} else {
-		log.Info("Num of services found", "num", len(services.Items))
 		for _, service := range services.Items {
 			service := service
 			//TODO if this controller handles it (in case if multiple operators and controllers are running
-			if shouldEnqueueService(&service) {
-				serviceList = append(serviceList, &service)
-			}
+			serviceList = append(serviceList, &service)
+		}
+	}
+
+	//find services resources in the cluster
+	deployments := &v1.DeploymentList{}
+	listOpsDeployment := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
+			}),
+	}
+	if err := r.List(ctx, deployments, listOpsDeployment); err != nil {
+		log.Error(err, "error obtaining Deployment objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, deployment := range deployments.Items {
+			deployment := deployment
+			//TODO if this controller handles it (in case if multiple operators and controllers are running
+			deploymentList = append(deploymentList, &deployment)
 		}
 	}
 
@@ -131,6 +175,9 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	store.Services.Reset(serviceList)
 	log.Info("reset Service store", "services", store.Services.String())
 
+	store.Deployments.Reset(deploymentList)
+	log.Info("reset Deployment store", "deployment", store.Deployments.String())
+
 	r.eventCh <- ievent.NewEventRender()
 	return ctrl.Result{}, nil
 }
@@ -138,49 +185,224 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+	ctx := context.Background()
 	controller := ctrl.NewControllerManagedBy(mgr).
 		For(&lkstnv1a1.LiveKitMesh{})
-	controller = controller.
-		Watches(&corev1.ConfigMap{}, &handler.EnqueueRequestForObject{}).
-		Watches(&corev1.Service{}, &handler.EnqueueRequestForObject{}).
-		WithEventFilter(predicate.Funcs{
-			CreateFunc: func(e event.CreateEvent) bool {
-				// Add your custom logic to filter ConfigMap creation events
-				if configMap, ok := e.Object.(*corev1.ConfigMap); ok {
-					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueueConfigMap(configMap)
-				} else if service, ok := e.Object.(*corev1.Service); ok {
-					return shouldEnqueueService(service)
-				}
-				return true
-			},
-			UpdateFunc: func(e event.UpdateEvent) bool {
-				// Add your custom logic to filter ConfigMap update events
-				configMap, ok := e.ObjectNew.(*corev1.ConfigMap)
-				//fmt.Println("update func", configMap)
-				if ok {
-					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueueConfigMap(configMap)
-				} else if service, ok := e.ObjectNew.(*corev1.Service); ok {
-					return shouldEnqueueService(service)
-				}
-				return true
-			},
-			DeleteFunc: func(e event.DeleteEvent) bool {
-				// Add your custom logic to filter ConfigMap deletion events
-				configMap, ok := e.Object.(*corev1.ConfigMap)
-				//fmt.Println("delete func", shouldEnqueueConfigMap(configMap))
-				if ok {
-					// Return true if you want to enqueue the event, false otherwise
-					return shouldEnqueueConfigMap(configMap)
-				} else if service, ok := e.Object.(*corev1.Service); ok {
-					return shouldEnqueueService(service)
-				}
-				return true
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
+		serviceLiveKitIndex, r.serviceMeshIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
+		configMapLiveKitIndex, configMapMeshIndexFunc); err != nil {
+		return err
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
+		deploymentLiveKitIndex, r.deploymentMeshIndexFunc); err != nil {
+		return err
+	}
+
+	// a label-selector predicate to select the loadbalancer services we are interested in
+	loadBalancerPredicate, err := predicate.LabelSelectorPredicate(
+		metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"stunner.l7mp.io/owned-by": "stunner",
 			},
 		})
+	if err != nil {
+		return err
+	}
+
+	controller.
+		Watches(&corev1.Service{},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.Or(predicate.NewPredicateFuncs(r.validateServiceForReconcile),
+				loadBalancerPredicate))).
+		Watches(&corev1.ConfigMap{},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.NewPredicateFuncs(r.validateConfigMapForReconcile))).
+		Watches(&v1.Deployment{},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(predicate.NewPredicateFuncs(r.validateDeploymentForReconcile)))
+
+	//controller = controller.
+	//	Watches(&corev1.ConfigMap{}, &handler.EnqueueRequestForObject{}).
+	//	Watches(&corev1.Service{}, &handler.EnqueueRequestForObject{}).
+	//	WithEventFilter(predicate.Funcs{
+	//		CreateFunc: func(e event.CreateEvent) bool {
+	//			// Add your custom logic to filter ConfigMap creation events
+	//			if configMap, ok := e.Object.(*corev1.ConfigMap); ok {
+	//				// Return true if you want to enqueue the event, false otherwise
+	//				return shouldEnqueueConfigMap(configMap)
+	//			} else if service, ok := e.Object.(*corev1.Service); ok {
+	//				return shouldEnqueueService(service)
+	//			}
+	//			return true
+	//		},
+	//		UpdateFunc: func(e event.UpdateEvent) bool {
+	//			// Add your custom logic to filter ConfigMap update events
+	//			configMap, ok := e.ObjectNew.(*corev1.ConfigMap)
+	//			//fmt.Println("update func", configMap)
+	//			if ok {
+	//				// Return true if you want to enqueue the event, false otherwise
+	//				return shouldEnqueueConfigMap(configMap)
+	//			} else if service, ok := e.ObjectNew.(*corev1.Service); ok {
+	//				return shouldEnqueueService(service)
+	//			}
+	//			return true
+	//		},
+	//		DeleteFunc: func(e event.DeleteEvent) bool {
+	//			// Add your custom logic to filter ConfigMap deletion events
+	//			configMap, ok := e.Object.(*corev1.ConfigMap)
+	//			//fmt.Println("delete func", shouldEnqueueConfigMap(configMap))
+	//			if ok {
+	//				// Return true if you want to enqueue the event, false otherwise
+	//				return shouldEnqueueConfigMap(configMap)
+	//			} else if service, ok := e.Object.(*corev1.Service); ok {
+	//				return shouldEnqueueService(service)
+	//			}
+	//			return true
+	//		},
+	//	})
 
 	return controller.Complete(r)
+}
+
+func (r *LiveKitMeshReconciler) validateServiceForReconcile(object client.Object) bool {
+	key := ""
+
+	if svc, ok := object.(*corev1.Service); ok {
+		key = svc.GetName()
+	} else {
+		return false
+	}
+
+	lkMeshList := &lkstnv1a1.LiveKitMeshList{}
+
+	listOps := &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(serviceLiveKitIndex, key),
+		Namespace:     object.GetNamespace(),
+	}
+
+	if err := r.List(context.Background(), lkMeshList, listOps); err != nil {
+		r.Log.Error(err, "unable to find associated livekit meshes")
+	}
+	r.Log.Info("Service validation", "lkmeshes list", len(lkMeshList.Items))
+	return len(lkMeshList.Items) > 0
+}
+
+func (r *LiveKitMeshReconciler) validateConfigMapForReconcile(object client.Object) bool {
+	key := ""
+
+	if cm, ok := object.(*corev1.ConfigMap); ok {
+		key = cm.GetName()
+	} else {
+		return false
+	}
+
+	lkMeshList := &lkstnv1a1.LiveKitMeshList{}
+
+	listOps := &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(configMapLiveKitIndex, key),
+		Namespace:     object.GetNamespace(),
+	}
+
+	if err := r.List(context.Background(), lkMeshList, listOps); err != nil {
+		r.Log.Error(err, "unable to find associated livekit meshes")
+	}
+	r.Log.Info("configmap validation", "lkmeshes list", len(lkMeshList.Items))
+	return len(lkMeshList.Items) > 0
+}
+
+func (r *LiveKitMeshReconciler) validateDeploymentForReconcile(object client.Object) bool {
+	key := ""
+
+	if dp, ok := object.(*v1.Deployment); ok {
+		key = dp.GetName()
+	} else {
+		return false
+	}
+
+	listOps := &client.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector(deploymentLiveKitIndex, key),
+		Namespace:     object.GetNamespace(),
+	}
+
+	lkMeshList := &lkstnv1a1.LiveKitMeshList{}
+
+	if err := r.List(context.Background(), lkMeshList, listOps); err != nil {
+		r.Log.Error(err, "unable to find associated livekit meshes")
+	}
+	r.Log.Info("deployment validation", "lkmeshes list", len(lkMeshList.Items))
+	return len(lkMeshList.Items) > 0
+}
+
+func configMapMeshIndexFunc(object client.Object) []string {
+	if lkMesh, ok := object.(*lkstnv1a1.LiveKitMesh); ok {
+		if lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap == nil {
+			return nil
+		}
+		return []string{*lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap}
+	}
+	return nil
+}
+
+func (r *LiveKitMeshReconciler) serviceMeshIndexFunc(object client.Object) []string {
+	var svcs []string
+	services := &corev1.ServiceList{}
+	lkMesh := &lkstnv1a1.LiveKitMesh{}
+
+	lkMesh = object.(*lkstnv1a1.LiveKitMesh)
+
+	listOps := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+			}),
+	}
+
+	if err := r.List(context.Background(), services, listOps); err != nil {
+		r.Log.Error(err, "error obtaining Service objects")
+	}
+
+	for _, svc := range services.Items {
+		svc := svc
+		svcs = append(svcs, types.NamespacedName{
+			Namespace: svc.GetNamespace(),
+			Name:      svc.GetName(),
+		}.String())
+	}
+	return svcs
+}
+
+func (r *LiveKitMeshReconciler) deploymentMeshIndexFunc(object client.Object) []string {
+	var dps []string
+	deployments := &v1.DeploymentList{}
+	lkMesh := &lkstnv1a1.LiveKitMesh{}
+
+	lkMesh = object.(*lkstnv1a1.LiveKitMesh)
+
+	listOps := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+			}),
+	}
+
+	if err := r.List(context.Background(), deployments, listOps); err != nil {
+		r.Log.Error(err, "error obtaining Deployment objects")
+	}
+
+	for _, svc := range deployments.Items {
+		svc := svc
+		dps = append(dps, types.NamespacedName{
+			Namespace: svc.GetNamespace(),
+			Name:      svc.GetName(),
+		}.String())
+	}
+	return dps
 }
 
 // Add your custom filtering logic here
@@ -193,9 +415,9 @@ func shouldEnqueueConfigMap(configMap *corev1.ConfigMap) bool {
 	return configMap.Labels[opdefault.DefaultLabelKeyForConfigMap] == opdefault.DefaultLabelValueForConfigMap
 }
 
-// Add your custom filtering logic here
-func shouldEnqueueService(svc *corev1.Service) bool {
-	_, ok := svc.Annotations["stunner.l7mp.io/related-gateway-name"]
-	return ok
-
-}
+//// Add your custom filtering logic here
+//func shouldEnqueueService(svc *corev1.Service) bool {
+//	_, ok := svc.Annotations["stunner.l7mp.io/related-gateway-name"]
+//	return ok
+//
+//}
