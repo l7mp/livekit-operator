@@ -37,9 +37,6 @@ spec:
       relatedStunnerGatewayAnnotations:
         name: udp-gateway
         namespace: stunner-gateway-system
-  stunner: # TODO
-    values:
-      key: val
 #      service:
   #        name: lk-control
   #        type: LoadBalancer
