@@ -21,6 +21,7 @@ func livekitServiceSkeleton(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.Service, err
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
 				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
 				"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 				"app.kubernetes.io/instance":    "livekit",
 				"app.kubernetes.io/version":     "v1.4.2",
@@ -98,6 +99,7 @@ func livekitDeploymentSkeleton(lkMesh *lkstnv1a1.LiveKitMesh, cm *corev1.ConfigM
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
 				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
 				"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 				"app.kubernetes.io/instance":    "livekit",
 				"app.kubernetes.io/version":     "v1.4.2",

@@ -344,13 +344,9 @@ func (in *LiveKitMeshStatus) DeepCopyInto(out *LiveKitMeshStatus) {
 	*out = *in
 	if in.ComponentStatus != nil {
 		in, out := &in.ComponentStatus, &out.ComponentStatus
-		*out = new(map[string]InstallStatus)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make(map[string]InstallStatus, len(*in))
-			for key, val := range *in {
-				(*out)[key] = val
-			}
+		*out = make(map[string]InstallStatus, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
 		}
 	}
 	if in.OverallStatus != nil {

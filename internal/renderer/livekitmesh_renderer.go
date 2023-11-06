@@ -5,6 +5,7 @@ import (
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/event"
 	"github.com/l7mp/livekit-operator/internal/store"
+	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -61,9 +62,15 @@ func updateLiveKitMeshStatus(logger logr.Logger, context *RenderContext) {
 
 	if lkMesh.Status.OverallStatus == nil {
 		log.Info("Unprocessed LiveKitMesh, initializing its status")
-		overallStatus := lkstnv1a1.InstallStatus("UPDATING")
+		overallStatus := lkstnv1a1.InstallStatus(opdefault.StatusReconciling)
 		lkMesh.Status.OverallStatus = &overallStatus
 
+		if lkMesh.Spec.Components.LiveKit != nil {
+			lkMesh.Status.ComponentStatus[opdefault.ComponentLiveKit] = opdefault.StatusReconciling
+		} else {
+			// SHOULD BE NONE in all other cases but here we need to raise panic
+			panic("LiveKit Component has not been found")
+		}
 	}
 }
 

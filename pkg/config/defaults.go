@@ -31,6 +31,9 @@ const (
 	// that the Deployments and Services created by the operator will have both the AppLabelKey
 	// and the OwnedByLabelKey labels set.
 	RelatedLiveKitMeshKey = "livekit.stunner.l7mp.io/livekit-mesh-name"
+
+	// RelatedComponent is the name of the label that is used to determine which component this resource belongs to
+	RelatedComponent = "livekit.stunner.l7mp.io/mesh-component"
 )
 
 // Statuses for the LiveKitMesh
@@ -47,4 +50,14 @@ const (
 	StatusError = "ERROR"
 	// StatusActionRequired Action is needed from the user for reconciliation to proceed
 	StatusActionRequired = "ACTION_REQUIRED"
+)
+
+// Component names
+const (
+	ComponentLiveKit     = "LIVEKIT"
+	ComponentIngress     = "INGRESS"
+	ComponentEgress      = "EGRESS"
+	ComponentGateway     = "GATEWAY"
+	ComponentCertManager = "CERTMANAGER"
+	ComponentMonitoring  = "MONITORING"
 )
