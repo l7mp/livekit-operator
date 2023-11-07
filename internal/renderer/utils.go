@@ -23,3 +23,15 @@ func (r *Renderer) getLoadBalancerIP(logger logr.Logger, gw *lkstnv1a1.Gateway) 
 	}
 	return nil
 }
+
+func mergeMaps(maps ...map[string]string) map[string]string {
+	mergedMap := make(map[string]string)
+
+	for _, m := range maps {
+		for k, v := range m {
+			mergedMap[k] = v
+		}
+	}
+
+	return mergedMap
+}

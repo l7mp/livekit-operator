@@ -79,6 +79,7 @@ func (o *Operator) eventLoop(ctx context.Context) {
 				o.log.Info("e", "e", e)
 				switch e.GetType() {
 				case event.TypeUpdate:
+					o.updaterCh <- e
 					//TODO
 
 				}
@@ -117,8 +118,10 @@ func HandleCleanup(ctx context.Context) error {
 		}
 		wg.Done()
 	}()
-	log.Info("Waiting \n \n")
 	wg.Wait()
-	log.Info("Waiting DONE \n \n")
 	return nil
+}
+
+func (o *Operator) GetOperatorChannel() chan event.Event {
+	return o.operatorCh
 }

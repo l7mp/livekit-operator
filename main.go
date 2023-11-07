@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	renderer "github.com/l7mp/livekit-operator/internal/renderer"
+	"github.com/l7mp/livekit-operator/internal/updater"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
@@ -108,13 +109,22 @@ func main() {
 		Logger:  logger,
 	})
 
+	setupLog.Info("setting up updater")
+	u := updater.NewUpdater(updater.Config{
+		Manager: mgr,
+		Logger:  logger,
+	})
+
 	setupLog.Info("setting up operator")
 	op := operator.NewOperator(operator.Config{
 		ControllerName: controllerName,
 		RenderCh:       r.GetRenderChannel(),
+		UpdaterCh:      u.GetUpdaterChannel(),
 		Manager:        mgr,
 		Logger:         logger,
 	})
+
+	r.SetOperatorChannel(op.GetOperatorChannel())
 
 	ctx := ctrl.SetupSignalHandler()
 
@@ -132,6 +142,12 @@ func main() {
 	setupLog.Info("starting renderer thread")
 	if err := r.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running renderer")
+		os.Exit(1)
+	}
+
+	setupLog.Info("starting updater thread")
+	if err := u.Start(ctx); err != nil {
+		setupLog.Error(err, "problem running updater")
 		os.Exit(1)
 	}
 
