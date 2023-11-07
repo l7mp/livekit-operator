@@ -7,6 +7,7 @@ import (
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
@@ -42,17 +43,19 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 						}.String(),
 						"addr", addr)
 					renderContext.stunnerPublicAddress = addr
-					renderLiveKitDeployment(r.logger, renderContext)
-					renderLiveKitService(r.logger, renderContext)
-					updateLiveKitMeshStatus(r.logger, renderContext)
+					r.renderLiveKitDeployment(renderContext)
+					r.renderLiveKitService(renderContext)
+					//updateLiveKitMeshStatus(r.logger, renderContext)
 				}
 			}
 			//renderContext.liveKit
+			log.Info("event to channel")
 			r.operatorCh <- renderContext.update
 		}
 	}
 }
 
+// TODO
 func updateLiveKitMeshStatus(logger logr.Logger, context *RenderContext) {
 	log := logger.WithName("updateLiveKitMeshStatus")
 
@@ -61,6 +64,7 @@ func updateLiveKitMeshStatus(logger logr.Logger, context *RenderContext) {
 	lkMesh := context.liveKitMesh
 
 	if lkMesh.Status.OverallStatus == nil {
+		//TODO init components' map cuz it is nil in the beginning
 		log.Info("Unprocessed LiveKitMesh, initializing its status")
 		overallStatus := lkstnv1a1.InstallStatus(opdefault.StatusReconciling)
 		lkMesh.Status.OverallStatus = &overallStatus
@@ -74,14 +78,17 @@ func updateLiveKitMeshStatus(logger logr.Logger, context *RenderContext) {
 	}
 }
 
-func renderLiveKitService(logger logr.Logger, context *RenderContext) {
-	log := logger.WithName("renderLiveKitService")
+func (r *Renderer) renderLiveKitService(context *RenderContext) {
+	log := r.log.WithName("renderLiveKitService")
 
 	log.Info("trying to render LiveKit-Server Service")
 
-	service, err := livekitServiceSkeleton(context.liveKitMesh)
-	if err != nil {
-		log.Error(err, "Error while creating LiveKit Service")
+	lkMesh := context.liveKitMesh
+	service := createLiveKitService(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, service, r.scheme); err != nil {
+		r.log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(service))
 	}
 
 	context.update.UpsertQueue.Services.Upsert(service)
@@ -89,15 +96,19 @@ func renderLiveKitService(logger logr.Logger, context *RenderContext) {
 	log.Info("Upserted LiveKit-Server Service into UpsertQueue")
 }
 
-func renderLiveKitDeployment(logger logr.Logger, context *RenderContext) {
-	log := logger.WithName("renderLiveKitDeployment")
+func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
+	log := r.log.WithName("renderLiveKitDeployment")
 
 	log.Info("trying to render LiveKit-Server Deployment")
 
-	deployment, err := livekitDeploymentSkeleton(context.liveKitMesh, context.liveKitConfig)
-	if err != nil {
-		log.Error(err, "Error while creating LiveKit Deployment")
+	lkMesh := context.liveKitMesh
+	deployment := createLiveKitDeployment(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, deployment, r.scheme); err != nil {
+		r.log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(deployment))
 	}
+
 	context.update.UpsertQueue.Deployments.Upsert(deployment)
 
 	log.Info("Upserted LiveKit-Server Deployment into UpsertQueue")

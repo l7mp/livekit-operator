@@ -3,29 +3,40 @@ package renderer
 import (
 	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
+	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func livekitServiceSkeleton(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.Service, error) {
+func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
+
+	name := fmt.Sprintf("%s-service", *lkMesh.Spec.Components.LiveKit.Deployment.Name)
+
+	labels := map[string]string{
+		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+		opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+		"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
+		"app.kubernetes.io/instance":    "livekit",
+		"app.kubernetes.io/version":     "v1.4.2",
+	}
+
+	if current := store.Services.GetObject(types.NamespacedName{
+		Namespace: lkMesh.Namespace,
+		Name:      name,
+	}); current != nil {
+		labels = mergeMaps(labels, current.Labels)
+	}
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: lkMesh.Namespace,
-			Name:      fmt.Sprintf("%s-service", *lkMesh.Spec.Components.LiveKit.Deployment.Name),
-			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-				"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
-				"app.kubernetes.io/instance":    "livekit",
-				"app.kubernetes.io/version":     "v1.4.2",
-			},
+			Name:      name,
+			Labels:    labels,
 			Annotations: map[string]string{
 				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
 					Namespace: lkMesh.GetNamespace(),
@@ -56,15 +67,10 @@ func livekitServiceSkeleton(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.Service, err
 		},
 	}
 
-	err := controllerutil.SetOwnerReference(lkMesh, svc, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return svc, nil
+	return svc
 }
 
-func livekitDeploymentSkeleton(lkMesh *lkstnv1a1.LiveKitMesh, cm *corev1.ConfigMap) (*v1.Deployment, error) {
+func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 
 	containerSpec := lkMesh.Spec.Components.LiveKit.Deployment.Container
 	var envList []corev1.EnvVar
@@ -152,10 +158,5 @@ func livekitDeploymentSkeleton(lkMesh *lkstnv1a1.LiveKitMesh, cm *corev1.ConfigM
 		},
 	}
 
-	err := controllerutil.SetOwnerReference(lkMesh, dp, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return dp, nil
+	return dp
 }
