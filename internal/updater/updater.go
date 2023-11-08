@@ -73,7 +73,7 @@ func (u *Updater) processUpdate(e *event.Update) error {
 
 	for _, dp := range uq.Deployments.GetAll() {
 		if op, err := u.upsertDeployment(dp, gen); err != nil {
-			u.log.Error(err, "cannot update deployment")
+			u.log.Error(err, "cannot update service", "operation", op)
 		}
 	}
 	return nil
