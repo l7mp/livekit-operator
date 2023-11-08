@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strings"
 )
 
 func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
@@ -22,7 +23,7 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 		opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
 		"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 		"app.kubernetes.io/instance":    "livekit",
-		"app.kubernetes.io/version":     "v1.4.2",
+		"app.kubernetes.io/version":     fetchVersion(lkMesh.Spec.Components.LiveKit.Deployment.Container.Image),
 	}
 
 	if current := store.Services.GetObject(types.NamespacedName{
@@ -91,7 +92,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 		ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap,
+					Name: *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name, //TODO FIXME copy base config two given namespace and populate it with right config
 				},
 				Key: "config.yaml",
 			},
@@ -108,7 +109,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
 				"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 				"app.kubernetes.io/instance":    "livekit",
-				"app.kubernetes.io/version":     "v1.4.2",
+				"app.kubernetes.io/version":     fetchVersion(containerSpec.Image),
 			},
 			Annotations: map[string]string{
 				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
@@ -132,31 +133,48 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 						"app.kubernetes.io/instance": "livekit",
 					},
 					//TODO	Annotations:                nil,
-					//TODO	OwnerReferences:            nil,
 					//TODO	Finalizers:                 nil,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName:            "default",
+					//ServiceAccountName:            "default",
 					TerminationGracePeriodSeconds: containerSpec.TerminationGracePeriodSeconds,
 					Containers: []corev1.Container{{
-						Name:    *lkMesh.Spec.Components.LiveKit.Deployment.Name,
-						Image:   containerSpec.Image,
-						Command: containerSpec.Command,
-						Args:    containerSpec.Args,
+						Name:            *lkMesh.Spec.Components.LiveKit.Deployment.Name,
+						Image:           containerSpec.Image,
+						ImagePullPolicy: *containerSpec.ImagePullPolicy,
+						Command:         containerSpec.Command,
+						Args:            containerSpec.Args,
 						Ports: []corev1.ContainerPort{{
 							Name:          "http",
 							ContainerPort: 7880,
 							Protocol:      corev1.ProtocolTCP,
 						}},
-						Env:       containerSpec.Env,
+						Env:       envList,
 						Resources: *containerSpec.Resources,
 					},
 					},
-					HostNetwork: containerSpec.HostNetwork,
+					HostNetwork:     containerSpec.HostNetwork,
+					Affinity:        containerSpec.Affinity,
+					SecurityContext: containerSpec.SecurityContext,
+					Tolerations:     containerSpec.Tolerations,
 				},
 			},
 		},
 	}
 
 	return dp
+}
+
+// fetchVersion fetches the version from the specified image
+func fetchVersion(image string) string {
+	// Find the last ":" in the input string
+	lastIndex := strings.LastIndex(image, ":")
+	if lastIndex != -1 {
+		// Version tag found
+		version := image[lastIndex+1:]
+		return version
+	}
+	// default is latest
+	// in case no tag has been provided
+	return "latest"
 }

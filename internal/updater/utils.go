@@ -39,7 +39,7 @@ func (u *Updater) upsertService(svc *corev1.Service, gen int) (ctrlutil.Operatio
 	}
 
 	u.log.V(1).Info("service upserted", "resource", store.GetObjectKey(svc), "generation",
-		gen, "result", store.DumpObject(current))
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current)
 
 	return op, nil
 }
@@ -63,7 +63,47 @@ func (u *Updater) upsertDeployment(dp *appv1.Deployment, gen int) (ctrlutil.Oper
 			current.Spec.Replicas = dp.Spec.Replicas
 		}
 
+		dp.Spec.Template.ObjectMeta.DeepCopyInto(&current.Spec.Template.ObjectMeta)
+
+		currentSpec := &current.Spec.Template.Spec
+		dpSpec := &dp.Spec.Template.Spec
+
+		currentSpec.Containers = make([]corev1.Container, len(dpSpec.Containers))
+		for i := range dpSpec.Containers {
+			dpSpec.Containers[i].DeepCopyInto(&currentSpec.Containers[i])
+		}
+
+		// rest is optional
+		if dpSpec.TerminationGracePeriodSeconds != nil {
+			currentSpec.TerminationGracePeriodSeconds = dpSpec.TerminationGracePeriodSeconds
+		}
+
+		currentSpec.HostNetwork = dpSpec.HostNetwork
+
+		// affinity
+		if dpSpec.Affinity != nil {
+			currentSpec.Affinity = dpSpec.Affinity
+		}
+
+		// tolerations
+		if dpSpec.Tolerations != nil {
+			currentSpec.Tolerations = dpSpec.Tolerations
+		}
+
+		// security context
+		if dpSpec.SecurityContext != nil {
+			currentSpec.SecurityContext = dpSpec.SecurityContext
+		}
+
+		currentSpec.ServiceAccountName = dpSpec.ServiceAccountName
+
+		return nil
 	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert deployment %q: %w",
+			store.GetObjectKey(dp), err)
+	}
 
 	return op, nil
 }
