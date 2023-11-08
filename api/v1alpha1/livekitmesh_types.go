@@ -125,8 +125,8 @@ type Deployment struct {
 	// ConfigMap holds the configuration for the livekit server that is executed.
 	// TODO in the future we should make a copy from the configmap into the namespace the lkmesh was deployed to
 	//
-	//ConfigMap *NamespacedName `json:"configMap"`
-	ConfigMap *string `json:"configMap"`
+	ConfigMap *NamespacedName `json:"configMap"`
+	//ConfigMap *string `json:"configMap"`
 }
 
 type LiveKit struct {

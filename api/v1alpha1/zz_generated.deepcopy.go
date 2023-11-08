@@ -175,8 +175,8 @@ func (in *Deployment) DeepCopyInto(out *Deployment) {
 	}
 	if in.ConfigMap != nil {
 		in, out := &in.ConfigMap, &out.ConfigMap
-		*out = new(string)
-		**out = **in
+		*out = new(NamespacedName)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

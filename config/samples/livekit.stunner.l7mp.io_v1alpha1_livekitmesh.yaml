@@ -14,17 +14,19 @@ spec:
     liveKit:
       deployment:
         replicas: 2 #opt
-        configMap: default-livekit-config
+        configMap:
+          namespace: default
+          name: default-livekit-config
 #          name: default-livekit-config
 #          namespace: default
         # container template
         container:
-          image: dummy-repo/dummy-image:dummy-tag
+          image: livekit/livekit-server:v1.4.2
           imagePullPolicy: IfNotPresent
-          #          args: # TODO
+          args: ["--disable-strict-config"]
           #          command: # TODO
           #          env: # TODO
-          #          terminationGracePeriodSeconds: 3600
+          terminationGracePeriodSeconds: 3600
           #          affinity: # TODO
           resources:
             limits:

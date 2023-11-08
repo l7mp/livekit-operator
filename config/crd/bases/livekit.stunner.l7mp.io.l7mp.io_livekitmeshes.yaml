@@ -87,12 +87,22 @@ spec:
                           Deployment manifest that will be created by the operator.
                         properties:
                           configMap:
-                            description: "ConfigMap holds the configuration for the
+                            description: ConfigMap holds the configuration for the
                               livekit server that is executed. TODO in the future
                               we should make a copy from the configmap into the namespace
-                              the lkmesh was deployed to \n ConfigMap *NamespacedName
-                              `json:\"configMap\"`"
-                            type: string
+                              the lkmesh was deployed to
+                            properties:
+                              name:
+                                description: Name is the name of the configMap resource
+                                type: string
+                              namespace:
+                                description: Namespace is the namespace of the configMap
+                                  resource
+                                type: string
+                            required:
+                            - name
+                            - namespace
+                            type: object
                           container:
                             description: Container template for the containers created
                               in each Pod in the replicaset. If omitted the default
