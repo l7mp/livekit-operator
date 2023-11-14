@@ -2,8 +2,6 @@ package renderer
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	// "fmt"
 
 	"github.com/go-logr/logr"
@@ -16,14 +14,14 @@ import (
 )
 
 type Config struct {
-	Scheme  *runtime.Scheme
-	Manager manager.Manager
-	Logger  logr.Logger
+	Scheme *runtime.Scheme
+	//Manager manager.Manager
+	Logger logr.Logger
 }
 
 type Renderer struct {
-	ctx                  context.Context
-	mgr                  manager.Manager
+	ctx context.Context
+	//mgr                  manager.Manager
 	scheme               *runtime.Scheme
 	gen                  int
 	renderCh, operatorCh chan event.Event
@@ -35,10 +33,10 @@ func NewRenderer(cfg Config) *Renderer {
 	return &Renderer{
 		scheme:   cfg.Scheme,
 		renderCh: make(chan event.Event, 10),
-		mgr:      cfg.Manager,
-		gen:      0,
-		log:      cfg.Logger.WithName("renderer"),
-		logger:   cfg.Logger,
+		//mgr:      cfg.Manager,
+		gen:    0,
+		log:    cfg.Logger.WithName("renderer"),
+		logger: cfg.Logger,
 	}
 }
 

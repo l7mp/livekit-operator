@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	"strings"
 	"sync"
 
@@ -29,6 +30,8 @@ type Store interface {
 	Flush()
 	// String returns a string with the keys of all stored objects
 	String() string
+	// FetchObjectBasedOnLabel fetches all the objects from the given store based on a label
+	FetchObjectBasedOnLabel(string) []client.Object
 }
 
 // Merge merges a store with another one.
@@ -157,4 +160,17 @@ func (s *storeImpl) String() string {
 	}
 	return fmt.Sprintf("store (%d objects): %s", len(os),
 		strings.Join(ret, ", "))
+}
+
+func (s *storeImpl) FetchObjectBasedOnLabel(lkMeshName string) []client.Object {
+	os := s.Objects()
+	var objects []client.Object
+
+	for _, object := range os {
+		l := object.GetLabels()
+		if l[opdefault.RelatedLiveKitMeshKey] == lkMeshName {
+			objects = append(objects, object)
+		}
+	}
+	return objects
 }
