@@ -72,3 +72,12 @@ func DumpObject(o client.Object) string {
 	}
 	return output
 }
+
+func FetchAllObjectsBasedOnLabelFromAllStores(lkMeshName string) []client.Object {
+	var objects []client.Object
+
+	objects = append(objects, Services.FetchObjectBasedOnLabel(lkMeshName)...)
+	objects = append(objects, Deployments.FetchObjectBasedOnLabel(lkMeshName)...)
+	//objects = append(objects, Deployments.FetchObjectBasedOnLabel(lkMeshName)...)
+	return objects
+}

@@ -14,27 +14,30 @@ import (
 const channelBufferSize = 200
 
 type Config struct {
-	ControllerName string
-	Manager        manager.Manager
-	RenderCh       chan event.Event
-	UpdaterCh      chan event.Event
-	Logger         logr.Logger
+	ControllerName      string
+	Manager             manager.Manager
+	RenderCh            chan event.Event
+	UpdaterCh           chan event.Event
+	ShouldInstallCharts bool
+	Logger              logr.Logger
 }
 
 type Operator struct {
 	ctx                             context.Context
 	mgr                             manager.Manager
 	renderCh, operatorCh, updaterCh chan event.Event
+	shouldInstallCharts             bool
 	log, logger                     logr.Logger
 }
 
 func NewOperator(config Config) *Operator {
 	return &Operator{
-		mgr:        config.Manager,
-		renderCh:   config.RenderCh,
-		operatorCh: make(chan event.Event, channelBufferSize),
-		updaterCh:  config.UpdaterCh,
-		logger:     config.Logger,
+		mgr:                 config.Manager,
+		renderCh:            config.RenderCh,
+		operatorCh:          make(chan event.Event, channelBufferSize),
+		updaterCh:           config.UpdaterCh,
+		shouldInstallCharts: config.ShouldInstallCharts,
+		logger:              config.Logger,
 	}
 }
 
@@ -44,19 +47,21 @@ func (o *Operator) Start(ctx context.Context) error {
 	o.ctx = ctx
 	log.Info("Starting operator")
 
-	log.Info("start installing Envoy-Gateway")
-	if err := external.EnvoyGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
-		return fmt.Errorf("cannot install Envoy-Gateway operator: %w", err)
-	}
+	if o.shouldInstallCharts {
+		log.Info("start installing Envoy-Gateway")
+		if err := external.EnvoyGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
+			return fmt.Errorf("cannot install Envoy-Gateway operator: %w", err)
+		}
 
-	log.Info("start installing Cert-Manager")
-	if err := external.CertManagerChart.InstallChart(o.ctx, o.logger); err != nil {
-		return fmt.Errorf("cannot install Cert-Manager: %w", err)
-	}
+		log.Info("start installing Cert-Manager")
+		if err := external.CertManagerChart.InstallChart(o.ctx, o.logger); err != nil {
+			return fmt.Errorf("cannot install Cert-Manager: %w", err)
+		}
 
-	log.Info("start installing Stunner-Gateway-Operator")
-	if err := external.StunnerGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
-		return fmt.Errorf("cannot install Stunner-Gateway-Operator: %w", err)
+		log.Info("start installing Stunner-Gateway-Operator")
+		if err := external.StunnerGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
+			return fmt.Errorf("cannot install Stunner-Gateway-Operator: %w", err)
+		}
 	}
 
 	log.Info("starting LiveKitOperator controller")
