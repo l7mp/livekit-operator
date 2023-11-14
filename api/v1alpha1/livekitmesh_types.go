@@ -258,8 +258,6 @@ type InstallStatus string
 
 // LiveKitMeshStatus defines the observed state of LiveKitMesh
 type LiveKitMeshStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
 	// ComponentStatus is a key-value store to signal the components' status after installation
 	// The map will give a brief overview for the user which component was successful or failed etc.
@@ -284,10 +282,9 @@ type LiveKitMeshStatus struct {
 	ConfigStatus *string `json:"configStatus"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
 // LiveKitMesh is the Schema for the livekitmeshes API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type LiveKitMesh struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

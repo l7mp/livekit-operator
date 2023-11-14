@@ -1,11 +1,8 @@
 package renderer
 
 import (
-	"github.com/go-logr/logr"
-	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/event"
 	"github.com/l7mp/livekit-operator/internal/store"
-	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -45,7 +42,6 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 					renderContext.stunnerPublicAddress = addr
 					r.renderLiveKitDeployment(renderContext)
 					r.renderLiveKitService(renderContext)
-					//updateLiveKitMeshStatus(r.logger, renderContext)
 				}
 			}
 			//renderContext.liveKit
@@ -55,38 +51,15 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 	}
 }
 
-// TODO
-func updateLiveKitMeshStatus(logger logr.Logger, context *RenderContext) {
-	log := logger.WithName("updateLiveKitMeshStatus")
-
-	log.Info("trying to update LiveKitMesh status")
-
-	lkMesh := context.liveKitMesh
-
-	if lkMesh.Status.OverallStatus == nil {
-		//TODO init components' map cuz it is nil in the beginning
-		log.Info("Unprocessed LiveKitMesh, initializing its status")
-		overallStatus := lkstnv1a1.InstallStatus(opdefault.StatusReconciling)
-		lkMesh.Status.OverallStatus = &overallStatus
-
-		if lkMesh.Spec.Components.LiveKit != nil {
-			lkMesh.Status.ComponentStatus[opdefault.ComponentLiveKit] = opdefault.StatusReconciling
-		} else {
-			// SHOULD BE NONE in all other cases but here we need to raise panic
-			panic("LiveKit Component has not been found")
-		}
-	}
-}
-
 func (r *Renderer) renderLiveKitService(context *RenderContext) {
-	log := r.log.WithName("renderLiveKitService")
+	log := r.logger.WithName("renderLiveKitService")
 
 	log.Info("trying to render LiveKit-Server Service")
 
 	lkMesh := context.liveKitMesh
 	service := createLiveKitService(lkMesh)
 	if err := controllerutil.SetOwnerReference(lkMesh, service, r.scheme); err != nil {
-		r.log.Error(err, "cannot set owner reference", "owner",
+		log.Error(err, "cannot set owner reference", "owner",
 			store.GetObjectKey(lkMesh), "reference",
 			store.GetObjectKey(service))
 	}
@@ -97,14 +70,14 @@ func (r *Renderer) renderLiveKitService(context *RenderContext) {
 }
 
 func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
-	log := r.log.WithName("renderLiveKitDeployment")
+	log := r.logger.WithName("renderLiveKitDeployment")
 
 	log.Info("trying to render LiveKit-Server Deployment")
 
 	lkMesh := context.liveKitMesh
 	deployment := createLiveKitDeployment(lkMesh)
 	if err := controllerutil.SetOwnerReference(lkMesh, deployment, r.scheme); err != nil {
-		r.log.Error(err, "cannot set owner reference", "owner",
+		log.Error(err, "cannot set owner reference", "owner",
 			store.GetObjectKey(lkMesh), "reference",
 			store.GetObjectKey(deployment))
 	}
