@@ -117,11 +117,12 @@ func main() {
 
 	setupLog.Info("setting up operator")
 	op := operator.NewOperator(operator.Config{
-		ControllerName: controllerName,
-		RenderCh:       r.GetRenderChannel(),
-		UpdaterCh:      u.GetUpdaterChannel(),
-		Manager:        mgr,
-		Logger:         logger,
+		ControllerName:      controllerName,
+		RenderCh:            r.GetRenderChannel(),
+		UpdaterCh:           u.GetUpdaterChannel(),
+		ShouldInstallCharts: true,
+		Manager:             mgr,
+		Logger:              logger,
 	})
 
 	r.SetOperatorChannel(op.GetOperatorChannel())
