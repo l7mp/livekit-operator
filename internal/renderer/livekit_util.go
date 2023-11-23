@@ -1,7 +1,6 @@
 package renderer
 
 import (
-	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
@@ -10,12 +9,50 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 	"strings"
 )
 
+func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, address *string) (*corev1.ConfigMap, error) {
+	dp := lkMesh.Spec.Components.LiveKit.Deployment
+	name := ConfigMapNameFormat(*dp.Name)
+	config := dp.Config
+
+	if address != nil {
+		for _, ts := range config.Rtc.TurnServers {
+			if ts.AuthURI == nil {
+				ts.Host = address
+			}
+		}
+	}
+
+	yamlData, err := yaml.Marshal(&config)
+	if err != nil {
+		return nil, err
+	}
+	yamlMap := make(map[string]string)
+	yamlMap[opdefault.DefaultLiveKitConfigFileName] = string(yamlData)
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: lkMesh.GetNamespace(),
+			Labels: map[string]string{
+				opdefault.OwnedByLabelKey:               opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey:         lkMesh.GetName(),
+				opdefault.DefaultLabelValueForConfigMap: opdefault.DefaultLabelValueForConfigMap,
+				opdefault.RelatedComponent:              opdefault.ComponentLiveKit,
+			},
+		},
+		Data: yamlMap,
+	}
+
+	return cm, nil
+}
+
 func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 
-	name := fmt.Sprintf("%s-service", *lkMesh.Spec.Components.LiveKit.Deployment.Name)
+	name := ServiceNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
 
 	labels := map[string]string{
 		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
@@ -92,7 +129,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 		ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name, //TODO FIXME copy base config two given namespace and populate it with right config
+					Name: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name), //TODO FIXME copy base config two given namespace and populate it with right config
 				},
 				Key: "config.yaml",
 			},

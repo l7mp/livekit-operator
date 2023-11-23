@@ -107,10 +107,13 @@ func (r *LiveKitMeshReconciler) updateLiveKitMeshStatus(ctx context.Context, req
 
 	//setting configstatus
 
-	if ok, cm := store.LiveKitMeshes.IsConfigMapReadyForMesh(lkMesh); ok {
-		cmData := cm.Data["config.yaml"]
-		lkMesh.Status.ConfigStatus = &cmData
-	}
+	//TODO rewrite this, configmapreadyformesh wont work anymore
+	//if ok, cm := store.LiveKitMeshes.IsConfigMapReadyForMesh(lkMesh); ok {
+	//	cmData := cm.Data["config.yaml"]
+	//	lkMesh.Status.ConfigStatus = &cmData
+	//}
+	dummystatus := "dev"
+	lkMesh.Status.ConfigStatus = &dummystatus
 
 	return lkMesh
 }

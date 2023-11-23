@@ -24,12 +24,12 @@ func GetNamespacedName(object client.Object) types.NamespacedName {
 	}
 }
 
-func GetConfigMapsNamespacedNameFromLiveKitMesh(mesh *lkstnv1a1.LiveKitMesh) *types.NamespacedName {
-	return &types.NamespacedName{
-		Namespace: *mesh.Spec.Components.LiveKit.Deployment.ConfigMap.Namespace,
-		Name:      *mesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name,
-	}
-}
+//func GetConfigMapsNamespacedNameFromLiveKitMesh(mesh *lkstnv1a1.LiveKitMesh) *types.NamespacedName {
+//	return &types.NamespacedName{
+//		Namespace: *mesh.Spec.Components.LiveKit.Deployment.ConfigMap.Namespace,
+//		Name:      *mesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name,
+//	}
+//}
 
 // Two resources are different if:
 // (1) They have different namespaces or names.

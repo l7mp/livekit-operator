@@ -65,6 +65,12 @@ func (u *Updater) processUpdate(e *event.Update) error {
 
 	uq := e.UpsertQueue
 
+	for _, cm := range uq.ConfigMaps.GetAll() {
+		if op, err := u.upsertConfigMap(cm, gen); err != nil {
+			u.log.Error(err, "cannot update deployment", "operation", op)
+		}
+	}
+
 	for _, svc := range uq.Services.GetAll() {
 		if op, err := u.upsertService(svc, gen); err != nil {
 			u.log.Error(err, "cannot update service", "operation", op)
@@ -73,7 +79,7 @@ func (u *Updater) processUpdate(e *event.Update) error {
 
 	for _, dp := range uq.Deployments.GetAll() {
 		if op, err := u.upsertDeployment(dp, gen); err != nil {
-			u.log.Error(err, "cannot update service", "operation", op)
+			u.log.Error(err, "cannot update deployment", "operation", op)
 		}
 	}
 	return nil

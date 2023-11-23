@@ -20,6 +20,7 @@ import (
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"time"
 
 	//"github.com/l7mp/livekit-operator/internal/controllers"
 	"github.com/l7mp/livekit-operator/internal/operator"
@@ -52,13 +53,15 @@ import (
 
 const (
 	logLevel = -4
+	timeout  = time.Second * 10
+	interval = time.Millisecond * 250
 )
 
 var (
 	// Resources
-	testNs     *corev1.Namespace
-	testLkMesh *lkstnv1a1.LiveKitMesh
-
+	testNs        *corev1.Namespace
+	testLkMesh    *lkstnv1a1.LiveKitMesh
+	testConfigMap *corev1.ConfigMap
 	// Globals
 	cfg       *rest.Config
 	k8sClient client.Client
@@ -69,9 +72,10 @@ var (
 )
 
 func InitResources() {
-	testNs = testutils.TestNs.DeepCopy()
 	ctrl.Log.Info("testns", "ns", testNs)
+	testNs = testutils.TestNs.DeepCopy()
 	testLkMesh = testutils.TestLkMesh.DeepCopy()
+	testConfigMap = testutils.TestConfigMap.DeepCopy()
 	scheme = runtime.NewScheme()
 	ctx, cancel = context.WithCancel(context.Background())
 }
@@ -159,12 +163,6 @@ var _ = BeforeSuite(func() {
 	err = op.Start(ctx)
 	Expect(err).NotTo(HaveOccurred())
 
-	/*	err = (&controllers.LiveKitMeshReconciler{
-			Client: k8sManager.GetClient(),
-			Scheme: k8sManager.GetScheme(),
-		}).SetupWithManager(k8sManager)
-		Expect(err).ToNot(HaveOccurred())*/
-
 	setupLog.Info("starting manager")
 	go func() {
 		defer GinkgoRecover()
@@ -221,7 +219,7 @@ var _ = Describe("Integration test:", func() {
 	Context("When creating a LiveKitMesh", func() {
 		It("should survive creating a minimal config", func() {
 			current := &lkstnv1a1.LiveKitMesh{ObjectMeta: metav1.ObjectMeta{
-				Name:      "test",
+				Name:      "testlivekitmesh",
 				Namespace: testutils.TestNsName,
 			}}
 			_, err := ctrlutil.CreateOrUpdate(ctx, k8sClient, current, func() error {
@@ -229,6 +227,7 @@ var _ = Describe("Integration test:", func() {
 				return nil
 			})
 			Expect(err).Should(Succeed())
+
 		})
 	})
 })

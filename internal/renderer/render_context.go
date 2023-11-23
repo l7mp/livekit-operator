@@ -4,7 +4,6 @@ import (
 	"github.com/go-logr/logr"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/event"
-	v1 "k8s.io/api/core/v1"
 )
 
 // RenderContext contains all the components from the LiveKitMesh configuration for the current rendering task,
@@ -17,10 +16,9 @@ type RenderContext struct {
 	//certManager *lkstnv1a1.CertManager
 	//monitoring  *lkstnv1a1.Monitoring
 	//gateway     *lkstnv1a1.Gateway
-	liveKitMesh          *lkstnv1a1.LiveKitMesh
-	stunnerPublicAddress *string
-	log                  logr.Logger
-	liveKitConfig        *v1.ConfigMap
+	liveKitMesh             *lkstnv1a1.LiveKitMesh
+	turnServerPublicAddress *string
+	log                     logr.Logger
 }
 
 func NewRenderContext(e *event.Render, r *Renderer, lkMesh *lkstnv1a1.LiveKitMesh) *RenderContext {
@@ -33,7 +31,8 @@ func NewRenderContext(e *event.Render, r *Renderer, lkMesh *lkstnv1a1.LiveKitMes
 		//certManager: lkMesh.Spec.Components.CertManager,
 		//monitoring:  lkMesh.Spec.Components.Monitoring,
 		//gateway:     lkMesh.Spec.Components.Gateway,
-		liveKitMesh: lkMesh,
-		log:         r.log.WithValues("LiveKitMesh", lkMesh.GetName()),
+		liveKitMesh:             lkMesh,
+		turnServerPublicAddress: nil,
+		log:                     r.log.WithValues("LiveKitMesh", lkMesh.GetName()),
 	}
 }

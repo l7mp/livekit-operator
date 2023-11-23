@@ -35,3 +35,27 @@ func mergeMaps(maps ...map[string]string) map[string]string {
 
 	return mergedMap
 }
+
+func ServiceNameFormat(lkMeshName string) string {
+	return fmt.Sprintf("%s-service", lkMeshName)
+}
+
+func ConfigMapNameFormat(lkDeploymentName string) string {
+	return fmt.Sprintf("%s-config", lkDeploymentName)
+}
+
+//func ParseLiveKitConfigMap(cm v1.ConfigMap) (lkstnv1a1.LiveKitConfig, error) {
+//	var lkConfig lkstnv1a1.LiveKitConfig
+//
+//	yamlConf, found := cm.Data[opdefault.DefaultLiveKitConfigFileName]
+//	if !found {
+//		return lkConfig, fmt.Errorf("error unpacking configmap data: %s not found",
+//			opdefault.DefaultLiveKitConfigFileName)
+//	}
+//
+//	if err := yaml.Unmarshal([]byte(yamlConf), &lkConfig); err != nil {
+//		return lkConfig, err
+//	}
+//
+//	return lkConfig, nil
+//}

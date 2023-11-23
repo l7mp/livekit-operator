@@ -13,6 +13,46 @@ import (
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+func (u *Updater) upsertConfigMap(cm *corev1.ConfigMap, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert configmap", "resource", store.GetObjectKey(cm), "generation", gen)
+
+	mgrclient := u.manager.GetClient()
+	current := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cm.GetName(),
+			Namespace: cm.GetNamespace(),
+		},
+	}
+
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrclient, current, func() error {
+		err := mergeMetadata(current, cm)
+		if err != nil {
+			return err
+		}
+
+		err = addOwnerRef(current, cm)
+		if err != nil {
+			return err
+		}
+
+		current.Data = make(map[string]string)
+		for k, v := range cm.Data {
+			current.Data[k] = v
+		}
+		u.log.Info("current configmap\n\n\n", "cm", current)
+
+		return nil
+	})
+	if err != nil {
+		return ctrlutil.OperationResultNone, err
+	}
+
+	u.log.V(1).Info("config-map upserted", "resource", store.GetObjectKey(cm), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
 func (u *Updater) upsertService(svc *corev1.Service, gen int) (ctrlutil.OperationResult, error) {
 	u.log.V(2).Info("upsert service", "resource", store.GetObjectKey(svc), "generation", gen)
 
@@ -39,7 +79,7 @@ func (u *Updater) upsertService(svc *corev1.Service, gen int) (ctrlutil.Operatio
 	}
 
 	u.log.V(1).Info("service upserted", "resource", store.GetObjectKey(svc), "generation",
-		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current)
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
 
 	return op, nil
 }
@@ -104,6 +144,9 @@ func (u *Updater) upsertDeployment(dp *appv1.Deployment, gen int) (ctrlutil.Oper
 		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert deployment %q: %w",
 			store.GetObjectKey(dp), err)
 	}
+
+	u.log.V(1).Info("deployment upserted", "resource", store.GetObjectKey(dp), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
 
 	return op, nil
 }

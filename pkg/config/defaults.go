@@ -34,6 +34,8 @@ const (
 
 	// RelatedComponent is the name of the label that is used to determine which component this resource belongs to
 	RelatedComponent = "livekit.stunner.l7mp.io/mesh-component"
+
+	DefaultLiveKitConfigFileName = "config.yaml"
 )
 
 // Statuses for the LiveKitMesh

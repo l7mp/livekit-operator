@@ -13,16 +13,28 @@ spec:
   components:
     liveKit:
       deployment:
-        replicas: 2 #opt
-        configMap:
-          namespace: default
-          name: default-livekit-config
-#          name: default-livekit-config
+        replicas: 1 #opt
+        config:
+          keys:
+            access_token: secretsecretsecretsecretsecretsecret
+          log_level: debug
+          port: 7880
+          redis:
+            address: redis.default.svc:6379
+          rtc:
+            port_range_end: 60000
+            port_range_start: 50000
+            tcp_port: 7801
+            turn_servers:
+              - uri: http://stunner-auth.stunner-gateway-system.svc:8088?service=turn
+            use_external_ip: false
+#        configMap:
 #          namespace: default
+#          name: default-livekit-config
         # container template
         container:
-          image: livekit/livekit-server:v1.4.2
-          imagePullPolicy: IfNotPresent
+          image: davidkornel/livekit-patched:latest
+          imagePullPolicy: Always
           args: ["--disable-strict-config"]
           #          command: # TODO
           #          env: # TODO

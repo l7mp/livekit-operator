@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -205,27 +204,27 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
-		configMapLiveKitIndex, configMapMeshIndexFunc); err != nil {
-		return err
-	}
+	//if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
+	//	configMapLiveKitIndex, configMapMeshIndexFunc); err != nil {
+	//	return err
+	//}
 
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &lkstnv1a1.LiveKitMesh{},
 		deploymentLiveKitIndex, r.deploymentMeshIndexFunc); err != nil {
 		return err
 	}
 
-	// a label-selector predicate to select the loadbalancer services we are interested in
-	stunnerLoadBalancerPredicate, err := predicate.LabelSelectorPredicate(
-		metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"stunner.l7mp.io/owned-by": "stunner",
-			},
-		})
-	if err != nil {
-		return err
-	}
-
+	/*	// a label-selector predicate to select the loadbalancer services we are interested in
+		stunnerLoadBalancerPredicate, err := predicate.LabelSelectorPredicate(
+			metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"stunner.l7mp.io/owned-by": "stunner",
+				},
+			})
+		if err != nil {
+			return err
+		}
+	*/
 	// a label-selector predicate to select the loadbalancer services we are interested in
 	ownedByPredicate, err := predicate.LabelSelectorPredicate(
 		metav1.LabelSelector{
@@ -240,11 +239,12 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	controller.
 		Watches(&corev1.Service{},
 			&handler.EnqueueRequestForObject{},
-			builder.WithPredicates(predicate.Or(stunnerLoadBalancerPredicate,
-				ownedByPredicate))).
+			//builder.WithPredicates(predicate.Or(stunnerLoadBalancerPredicate, ownedByPredicate))).
+			builder.WithPredicates(ownedByPredicate)).
 		Watches(&corev1.ConfigMap{},
 			&handler.EnqueueRequestForObject{},
-			builder.WithPredicates(predicate.NewPredicateFuncs(r.validateConfigMapForReconcile))).
+			builder.WithPredicates(ownedByPredicate)).
+		//builder.WithPredicates(predicate.NewPredicateFuncs(r.validateConfigMapForReconcile))).
 		Watches(&v1.Deployment{},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(ownedByPredicate))
@@ -276,30 +276,31 @@ func (r *LiveKitMeshReconciler) validateServiceForReconcile(object client.Object
 	return len(lkMeshList.Items) > 0
 }
 
-func (r *LiveKitMeshReconciler) validateConfigMapForReconcile(object client.Object) bool {
-	key := ""
+/*
+	func (r *LiveKitMeshReconciler) validateConfigMapForReconcile(object client.Object) bool {
+		key := ""
 
-	if cm, ok := object.(*corev1.ConfigMap); ok {
-		key = store.GetObjectKey(cm)
-	} else {
-		return false
+		if cm, ok := object.(*corev1.ConfigMap); ok {
+			key = store.GetObjectKey(cm)
+		} else {
+			return false
+		}
+
+		lkMeshList := &lkstnv1a1.LiveKitMeshList{}
+
+		listOps := &client.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(configMapLiveKitIndex, key),
+		}
+
+		if err := r.List(context.Background(), lkMeshList, listOps); err != nil {
+			r.Log.Error(err, "unable to find associated livekit meshes")
+		}
+		if len(lkMeshList.Items) > 0 {
+			r.Log.Info("configmap validation", "lkmeshes list", len(lkMeshList.Items))
+		}
+		return len(lkMeshList.Items) > 0
 	}
-
-	lkMeshList := &lkstnv1a1.LiveKitMeshList{}
-
-	listOps := &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(configMapLiveKitIndex, key),
-	}
-
-	if err := r.List(context.Background(), lkMeshList, listOps); err != nil {
-		r.Log.Error(err, "unable to find associated livekit meshes")
-	}
-	if len(lkMeshList.Items) > 0 {
-		r.Log.Info("configmap validation", "lkmeshes list", len(lkMeshList.Items))
-	}
-	return len(lkMeshList.Items) > 0
-}
-
+*/
 func (r *LiveKitMeshReconciler) validateDeploymentForReconcile(object client.Object) bool {
 	key := ""
 
@@ -324,19 +325,19 @@ func (r *LiveKitMeshReconciler) validateDeploymentForReconcile(object client.Obj
 	return len(lkMeshList.Items) > 0
 }
 
-func configMapMeshIndexFunc(object client.Object) []string {
-	if lkMesh, ok := object.(*lkstnv1a1.LiveKitMesh); ok {
-		if lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap == nil {
-			return nil
-		}
-		cm := types.NamespacedName{
-			Namespace: *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Namespace,
-			Name:      *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name,
-		}.String()
-		return []string{cm}
-	}
-	return nil
-}
+//func configMapMeshIndexFunc(object client.Object) []string {
+//	if lkMesh, ok := object.(*lkstnv1a1.LiveKitMesh); ok {
+//		if lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap == nil {
+//			return nil
+//		}
+//		cm := types.NamespacedName{
+//			Namespace: *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Namespace,
+//			Name:      *lkMesh.Spec.Components.LiveKit.Deployment.ConfigMap.Name,
+//		}.String()
+//		return []string{cm}
+//	}
+//	return nil
+//}
 
 func (r *LiveKitMeshReconciler) serviceMeshIndexFunc(object client.Object) []string {
 	var svcs []string
