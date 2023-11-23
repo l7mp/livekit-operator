@@ -1677,7 +1677,6 @@ spec:
                       corresponding resources
                     type: object
                 required:
-                - gateway
                 - liveKit
                 type: object
             required:

@@ -253,6 +253,8 @@ type Component struct {
 	Egress *Egress `json:"egress,omitempty"`
 
 	// Gateway field should hold the configuration for ANY Gateway deployments in the cluster (STUNner and Envoy)
+	//
+	// +optional
 	Gateway *Gateway `json:"gateway"`
 
 	// CertManager manages the cert

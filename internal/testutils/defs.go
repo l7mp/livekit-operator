@@ -118,12 +118,13 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 			},
 			Ingress: nil,
 			Egress:  nil,
-			Gateway: &lkstnv1a1.Gateway{
-				RelatedStunnerGatewayAnnotations: &lkstnv1a1.NamespacedName{
-					Namespace: &TestNsName,
-					Name:      &TestGatewayNamespacedName,
-				},
-			},
+			//Gateway: &lkstnv1a1.Gateway{
+			//	RelatedStunnerGatewayAnnotations: &lkstnv1a1.NamespacedName{
+			//		Namespace: &TestNsName,
+			//		Name:      &TestGatewayNamespacedName,
+			//	},
+			//},
+			Gateway:     nil,
 			CertManager: nil,
 			Monitoring:  nil,
 		},
