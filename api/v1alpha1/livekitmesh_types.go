@@ -32,7 +32,7 @@ type Container struct {
 	// +optional
 	ImagePullPolicy *corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 
-	// Entrypoint array. Defaults: "stunnerd".
+	// Entrypoint array.
 	//
 	// +optional
 	Command []string `json:"command,omitempty"`
@@ -99,6 +99,45 @@ type NamespacedName struct {
 	Name *string `json:"name"`
 }
 
+type Keys struct {
+	AccessToken string `yaml:"access_token" json:"access_token,omitempty"`
+}
+
+type Redis struct {
+	Address string `yaml:"address" json:"address,omitempty"`
+}
+
+type TurnServer struct {
+	Credential string `yaml:"credential" json:"credential,omitempty"`
+	Host       string `yaml:"host" json:"host,omitempty"`
+	Port       int    `yaml:"port" json:"port,omitempty"`
+	Protocol   string `yaml:"protocol" json:"protocol,omitempty"`
+	Username   string `yaml:"username" json:"username,omitempty"`
+	AuthURI    string `yaml:"uri,omitempty" json:"uri,omitempty"`
+}
+
+type Rtc struct {
+	PortRangeEnd   int          `yaml:"port_range_end" json:"port_range_end,omitempty"`
+	PortRangeStart int          `yaml:"port_range_start" json:"port_range_start,omitempty"`
+	TcpPort        int          `yaml:"tcp_port" json:"tcp_port,omitempty"`
+	StunServers    []string     `yaml:"stun_servers" json:"stun_servers,omitempty"`
+	TurnServers    []TurnServer `yaml:"turn_servers" json:"turn_servers,omitempty"`
+	UseExternalIp  bool         `yaml:"use_external_ip" json:"use_external_ip,omitempty"`
+}
+
+type LiveKitConfig struct {
+	Keys     *Keys  `yaml:"keys" json:"keys,omitempty"`
+	LogLevel string `yaml:"log_level" json:"log_level,omitempty"`
+	Port     int    `yaml:"port" json:"port,omitempty"`
+	Redis    *Redis `yaml:"redis" json:"redis,omitempty"`
+	Rtc      *Rtc   `yaml:"rtc" json:"rtc,omitempty"`
+	//Turn struct {
+	//	Enabled                 bool `yaml:"enabled" json:"enabled,omitempty"`
+	//	LoadBalancerAnnotations struct {
+	//	} `yaml:"loadBalancerAnnotations" json:"loadBalancerAnnotations"`
+	//} `yaml:"turn" json:"turn,omitempty"`
+}
+
 type Deployment struct {
 
 	// Name is the name of the Deployment that will be created.
@@ -125,8 +164,10 @@ type Deployment struct {
 	// ConfigMap holds the configuration for the livekit server that is executed.
 	// TODO in the future we should make a copy from the configmap into the namespace the lkmesh was deployed to
 	//
+	// +optional
 	ConfigMap *NamespacedName `json:"configMap"`
-	//ConfigMap *string `json:"configMap"`
+
+	Config *LiveKitConfig `json:"config"`
 }
 
 type LiveKit struct {
@@ -161,7 +202,6 @@ type Monitoring struct {
 }
 
 type Gateway struct {
-	//Defaults bool `json:"defaults"`
 
 	// RelatedStunnerGatewayAnnotations is the name of the related gateway name for STUNner
 	// When deploying the LiveKit server pod we need to know the external IP of the LB SVC

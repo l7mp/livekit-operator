@@ -86,6 +86,55 @@ spec:
                         description: Deployment holds the configuration for the future
                           Deployment manifest that will be created by the operator.
                         properties:
+                          config:
+                            properties:
+                              keys:
+                                properties:
+                                  access_token:
+                                    type: string
+                                type: object
+                              log_level:
+                                type: string
+                              port:
+                                type: integer
+                              redis:
+                                properties:
+                                  address:
+                                    type: string
+                                type: object
+                              rtc:
+                                properties:
+                                  port_range_end:
+                                    type: integer
+                                  port_range_start:
+                                    type: integer
+                                  stun_servers:
+                                    items:
+                                      type: string
+                                    type: array
+                                  tcp_port:
+                                    type: integer
+                                  turn_servers:
+                                    items:
+                                      properties:
+                                        credential:
+                                          type: string
+                                        host:
+                                          type: string
+                                        port:
+                                          type: integer
+                                        protocol:
+                                          type: string
+                                        uri:
+                                          type: string
+                                        username:
+                                          type: string
+                                      type: object
+                                    type: array
+                                  use_external_ip:
+                                    type: boolean
+                                type: object
+                            type: object
                           configMap:
                             description: ConfigMap holds the configuration for the
                               livekit server that is executed. TODO in the future
@@ -1150,7 +1199,7 @@ spec:
                                   type: string
                                 type: array
                               command:
-                                description: 'Entrypoint array. Defaults: "stunnerd".'
+                                description: Entrypoint array.
                                 items:
                                   type: string
                                 type: array
@@ -1612,7 +1661,7 @@ spec:
                             format: int32
                             type: integer
                         required:
-                        - configMap
+                        - config
                         type: object
                       type:
                         default: livekit
