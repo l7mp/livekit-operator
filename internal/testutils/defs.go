@@ -41,6 +41,10 @@ var (
 	TestPortRangeEnd                  = 22222
 	TestTCPPort                       = 1235
 	TestUseExternalIP                 = false
+	TestIssuerEmail                   = "dummy@dummy.test"
+	TestIssuerChallengeSolver         = opdefault.IssuerCloudFlare
+	TestIssuerDnsZone                 = "test.com"
+	TestApiToken                      = "test-api-token"
 )
 
 // TestNs is a Namespace for testing purposes
@@ -116,17 +120,24 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 					},
 				},
 			},
+			CertManager: &lkstnv1a1.CertManager{
+				Issuer: &lkstnv1a1.Issuer{
+					Email:           &TestIssuerEmail,
+					ChallengeSolver: &TestIssuerChallengeSolver,
+					DnsZone:         &TestIssuerDnsZone,
+					ApiToken:        &TestApiToken,
+				},
+			},
 			Ingress: nil,
-			Egress:  nil,
 			//Gateway: &lkstnv1a1.Gateway{
 			//	RelatedStunnerGatewayAnnotations: &lkstnv1a1.NamespacedName{
 			//		Namespace: &TestNsName,
 			//		Name:      &TestGatewayNamespacedName,
 			//	},
 			//},
-			Gateway:     nil,
-			CertManager: nil,
-			Monitoring:  nil,
+			Egress:     nil,
+			Gateway:    nil,
+			Monitoring: nil,
 		},
 	},
 	Status: lkstnv1a1.LiveKitMeshStatus{},

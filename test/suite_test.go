@@ -18,6 +18,7 @@ package test
 
 import (
 	"context"
+	cert "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
@@ -59,9 +60,9 @@ const (
 
 var (
 	// Resources
-	testNs        *corev1.Namespace
-	testLkMesh    *lkstnv1a1.LiveKitMesh
-	testConfigMap *corev1.ConfigMap
+	testNs     *corev1.Namespace
+	testLkMesh *lkstnv1a1.LiveKitMesh
+	//testConfigMap *corev1.ConfigMap
 	// Globals
 	cfg       *rest.Config
 	k8sClient client.Client
@@ -75,7 +76,7 @@ func InitResources() {
 	ctrl.Log.Info("testns", "ns", testNs)
 	testNs = testutils.TestNs.DeepCopy()
 	testLkMesh = testutils.TestLkMesh.DeepCopy()
-	testConfigMap = testutils.TestConfigMap.DeepCopy()
+	//testConfigMap = testutils.TestConfigMap.DeepCopy()
 	scheme = runtime.NewScheme()
 	ctx, cancel = context.WithCancel(context.Background())
 }
@@ -109,6 +110,10 @@ var _ = BeforeSuite(func() {
 
 	// LiveKitMesh CRD scheme
 	err = lkstnv1a1.AddToScheme(scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	// Cert-manager scheme
+	err = cert.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
@@ -229,5 +234,96 @@ var _ = Describe("Integration test:", func() {
 			Expect(err).Should(Succeed())
 
 		})
+
+		/*		It("should render configmap", func() {
+					lookUpKey := types.NamespacedName{
+						Namespace: testutils.TestNsName,
+						Name:      renderer.ConfigMapNameFormat(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
+					}
+
+					cm := &corev1.ConfigMap{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, lookUpKey, cm)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(BeNil())
+
+					Expect(cm.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentLiveKit))
+				})
+
+				It("should render deployment", func() {
+					lookUpKey := types.NamespacedName{
+						Namespace: testutils.TestNsName,
+						Name:      *testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name,
+					}
+					dp := &v1.Deployment{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, lookUpKey, dp)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(BeNil())
+
+					Expect(dp.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentLiveKit))
+
+				})
+
+				It("should render service", func() {
+					lookUpKey := types.NamespacedName{
+						Namespace: testutils.TestNsName,
+						Name:      renderer.ServiceNameFormat(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
+					}
+
+					svc := &corev1.Service{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, lookUpKey, svc)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(BeTrue())
+
+					Expect(svc.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentLiveKit))
+
+				})
+
+				It("should create issuer and secret", func() {
+					lookUpKey := types.NamespacedName{
+						Namespace: testutils.TestNsName,
+						Name:      "cloudflare-issuer",
+					}
+
+					issuer := &cert.Issuer{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, lookUpKey, issuer)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(BeTrue())
+
+					Expect(issuer.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentCertManager))
+
+					lookUpKey = types.NamespacedName{
+						Namespace: testutils.TestNsName,
+						Name:      "cloudflare-api-token-secret",
+					}
+
+					secret := &corev1.Secret{}
+					Eventually(func() error {
+						err := k8sClient.Get(ctx, lookUpKey, secret)
+						if err != nil {
+							return err
+						}
+						return nil
+					}, timeout, interval).Should(BeTrue())
+
+					Expect(secret.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentCertManager))
+
+				})*/
+
 	})
 })
