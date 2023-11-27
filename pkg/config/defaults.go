@@ -35,7 +35,11 @@ const (
 	// RelatedComponent is the name of the label that is used to determine which component this resource belongs to
 	RelatedComponent = "livekit.stunner.l7mp.io/mesh-component"
 
+	// DefaultLiveKitConfigFileName is the key of the livekit config in the config map data field
 	DefaultLiveKitConfigFileName = "config.yaml"
+
+	// DefaultClusterIssuerSecretApiTokenKey is the default api token key in the cluster issuer's secret
+	DefaultClusterIssuerSecretApiTokenKey = "api-token"
 )
 
 // Statuses for the LiveKitMesh
@@ -62,4 +66,13 @@ const (
 	ComponentGateway     = "GATEWAY"
 	ComponentCertManager = "CERTMANAGER"
 	ComponentMonitoring  = "MONITORING"
+)
+
+// Issuer challenge provider types
+const (
+	IssuerCloudFlare   = "cloudflare"
+	IssuerCloudDNS     = "clouddns"
+	IssuerRoute53      = "route53"
+	IssuerDigitalOcean = "digitalocean"
+	IssuerAzureDNS     = "azuredns"
 )

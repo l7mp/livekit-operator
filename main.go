@@ -43,6 +43,7 @@ import (
 
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	cert "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	livekitstunnerl7mpiov1alpha1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
@@ -55,6 +56,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(livekitstunnerl7mpiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cert.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

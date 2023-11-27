@@ -22,6 +22,8 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 			lkMesh := lkMesh
 			renderContext := NewRenderContext(e, r, lkMesh)
 			gw := renderContext.liveKitMesh.Spec.Components.Gateway
+
+			// if the PR goes in then this whole if-else block should be removed
 			if gw != nil {
 				log.V(2).Info("Gateway is configured, looking for loadbalancerip for the LiveKit config")
 				if addr := r.getLoadBalancerIP(r.logger, gw); addr == nil {
@@ -41,11 +43,12 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 					renderContext.turnServerPublicAddress = addr
 				}
 			}
+
 			// gw is not configured in the LiveKitMesh
 			// this will be supported way to render the configmap however
-			r.renderLiveKitConfigMap(renderContext)
-			r.renderLiveKitDeployment(renderContext)
-			r.renderLiveKitService(renderContext)
+			r.renderLiveKitComponentResources(renderContext)
+
+			r.renderCertManagerComponentResources(renderContext)
 
 			//renderContext.liveKit
 			log.Info("event to channel")
@@ -54,10 +57,49 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 	}
 }
 
+func (r *Renderer) renderLiveKitComponentResources(renderContext *RenderContext) {
+	r.renderLiveKitConfigMap(renderContext)
+	r.renderLiveKitDeployment(renderContext)
+	r.renderLiveKitService(renderContext)
+}
+
+func (r *Renderer) renderCertManagerComponentResources(renderContext *RenderContext) {
+	r.renderCertManagerIssuerAndSecret(renderContext)
+}
+
+func (r *Renderer) renderCertManagerIssuerAndSecret(context *RenderContext) {
+	log := r.logger.WithName("renderCertManagerIssuer")
+
+	log.V(2).Info("trying to render Issuer", "component", "Cert-Manager")
+	lkMesh := context.liveKitMesh
+
+	issuer, secret := createIssuer(*lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, issuer, r.scheme); err != nil {
+		log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(issuer))
+		return
+	}
+	if err := controllerutil.SetOwnerReference(lkMesh, secret, r.scheme); err != nil {
+		log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(secret))
+		return
+	}
+
+	context.update.UpsertQueue.Issuer.Upsert(issuer)
+
+	log.V(2).Info("Upserted Cert-Manager Issuer into UpsertQueue", "cm", store.GetObjectKey(issuer))
+
+	context.update.UpsertQueue.Secret.Upsert(secret)
+
+	log.V(2).Info("Upserted Cert-Manager Secret into UpsertQueue", "cm", store.GetObjectKey(secret))
+}
+
 func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
 	log := r.logger.WithName("renderLiveKitConfigMap")
 
-	log.Info("trying to render LiveKit-Server ConfigMap")
+	log.V(2).Info("trying to render LiveKit-Server ConfigMap")
 
 	lkMesh := context.liveKitMesh
 
@@ -75,13 +117,13 @@ func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
 
 	context.update.UpsertQueue.ConfigMaps.Upsert(cm)
 
-	log.Info("Upserted LiveKit-Server ConfigMap into UpsertQueue")
+	log.V(2).Info("Upserted LiveKit-Server ConfigMap into UpsertQueue", "cm", store.GetObjectKey(cm))
 }
 
 func (r *Renderer) renderLiveKitService(context *RenderContext) {
 	log := r.logger.WithName("renderLiveKitService")
 
-	log.Info("trying to render LiveKit-Server Service")
+	log.V(2).Info("trying to render LiveKit-Server Service")
 
 	lkMesh := context.liveKitMesh
 	service := createLiveKitService(lkMesh)
@@ -94,13 +136,13 @@ func (r *Renderer) renderLiveKitService(context *RenderContext) {
 
 	context.update.UpsertQueue.Services.Upsert(service)
 
-	log.Info("Upserted LiveKit-Server Service into UpsertQueue")
+	log.V(2).Info("Upserted LiveKit-Server Service into UpsertQueue", "cm", store.GetObjectKey(service))
 }
 
 func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
 	log := r.logger.WithName("renderLiveKitDeployment")
 
-	log.Info("trying to render LiveKit-Server Deployment")
+	log.V(2).Info("trying to render LiveKit-Server Deployment")
 
 	lkMesh := context.liveKitMesh
 	deployment := createLiveKitDeployment(lkMesh)
@@ -113,5 +155,5 @@ func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
 
 	context.update.UpsertQueue.Deployments.Upsert(deployment)
 
-	log.Info("Upserted LiveKit-Server Deployment into UpsertQueue")
+	log.V(2).Info("Upserted LiveKit-Server Deployment into UpsertQueue", "cm", store.GetObjectKey(deployment))
 }

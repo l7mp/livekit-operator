@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/go-logr/logr"
 	"github.com/l7mp/livekit-operator/internal/event"
+	//corev1 "k8s.io/api/core/v1"
+	//ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -80,6 +82,18 @@ func (u *Updater) processUpdate(e *event.Update) error {
 	for _, dp := range uq.Deployments.GetAll() {
 		if op, err := u.upsertDeployment(dp, gen); err != nil {
 			u.log.Error(err, "cannot update deployment", "operation", op)
+		}
+	}
+
+	for _, s := range uq.Secret.GetAll() {
+		if op, err := u.upsertSecret(s, gen); err != nil {
+			u.log.Error(err, "cannot update secret", "operation", op)
+		}
+	}
+
+	for _, i := range uq.Issuer.GetAll() {
+		if op, err := u.upsertIssuer(i, gen); err != nil {
+			u.log.Error(err, "cannot update issuer", "operation", op)
 		}
 	}
 	return nil

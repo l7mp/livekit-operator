@@ -47,10 +47,16 @@ spec:
             requests:
               cpu: 500m
               memory: 128Mi
-    gateway:
-      relatedStunnerGatewayAnnotations:
-        name: udp-gateway
-        namespace: stunner-gateway-system
+    certManager:
+      issuer:
+        apiToken: dummytoken
+        challengeSolver: cloudflare
+        dnsZone: example.com
+        email: dummy@dummy.com
+#    gateway:
+#      relatedStunnerGatewayAnnotations:
+#        name: udp-gateway
+#        namespace: stunner-gateway-system
 #      service:
   #        name: lk-control
   #        type: LoadBalancer
@@ -71,7 +77,6 @@ spec:
   #    #TODO
   #    egress:
   #    #TODO
-  #    certManager:
-  #    #TODO
+
   #    monitoring:
   #    #TODO

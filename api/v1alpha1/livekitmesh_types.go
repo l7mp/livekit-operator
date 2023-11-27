@@ -184,6 +184,39 @@ type LiveKit struct {
 	Deployment *Deployment `json:"deployment"`
 }
 
+type Issuer struct {
+
+	/*	// Name of the issuer resource
+		// +kubebuilder:default=livekitmesh-issuer
+		// +optional
+		Name *string `json:"name"`*/
+
+	// Email is the email address to be associated with the ACME account.
+	// This field is optional, but it is strongly recommended to be set.
+	// It will be used to contact you in case of issues with your account or
+	// certificates, including expiry notification emails.
+	// This field may be updated after the account is initially registered.
+	// +optional
+	Email *string `json:"email,omitempty"`
+
+	// ChallengeSolver Used to configure a DNS01 challenge provider to be used when solving DNS01 challenges.
+	//
+	// +kubebuilder:validation:Enum=cloudflare;route53;clouddns;digitalocean;azuredns
+	// +kubebuilder:validation:Required
+	ChallengeSolver *string `json:"challengeSolver"`
+
+	// DnsZone Certificate requests will be issues against this DnsZone.
+	// This ChallengeSolver will use this to solve the challenge.
+	//
+	// +kubebuilder:validation:Required
+	DnsZone *string `json:"dnsZone"`
+
+	// ApiToken is the API token for the CloudFlare account that owns the challenged DnsZone
+	//
+	// +kubebuilder:validation:Required
+	ApiToken *string `json:"apiToken"`
+}
+
 // Ingress is the LiveKit tool not the gateway resource to ingest traffic into the cluster
 type Ingress struct {
 	//TODO
@@ -194,7 +227,10 @@ type Egress struct {
 }
 
 type CertManager struct {
-	//TODO
+	// Issuer holds the necessary configuration about the used Issuer
+	//
+	// +optional
+	Issuer *Issuer `json:"issuer,omitempty"`
 }
 
 type Monitoring struct {
@@ -257,8 +293,8 @@ type Component struct {
 	// +optional
 	Gateway *Gateway `json:"gateway"`
 
-	// CertManager manages the cert
-	//TODO
+	// CertManager will obtain certificates from a variety of Issuers, both popular public Issuers and private Issuers,
+	// and ensure the certificates are valid and up-to-date, and will attempt to renew certificates at a configured time before expiry.
 	//
 	//
 	// +optional

@@ -2,7 +2,9 @@ package updater
 
 import (
 	"fmt"
+	cert "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/l7mp/livekit-operator/internal/store"
+	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +41,7 @@ func (u *Updater) upsertConfigMap(cm *corev1.ConfigMap, gen int) (ctrlutil.Opera
 		for k, v := range cm.Data {
 			current.Data[k] = v
 		}
-		u.log.Info("current configmap\n\n\n", "cm", current)
+		u.log.Info("current configmap", "cm", store.GetObjectKey(cm), "data", cm.Data)
 
 		return nil
 	})
@@ -146,6 +148,71 @@ func (u *Updater) upsertDeployment(dp *appv1.Deployment, gen int) (ctrlutil.Oper
 	}
 
 	u.log.V(1).Info("deployment upserted", "resource", store.GetObjectKey(dp), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertSecret(s *corev1.Secret, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert cluster issuer secret", "resource", store.GetObjectKey(s), "generation", gen)
+
+	mgrClient := u.manager.GetClient()
+	current := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{
+		Name:      s.GetName(),
+		Namespace: s.GetNamespace(),
+	}}
+
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		if err := mergeMetadata(current, s); err != nil {
+			return nil
+		}
+
+		current.Data = map[string][]byte{}
+		current.Data[opdefault.DefaultClusterIssuerSecretApiTokenKey] = s.Data[opdefault.DefaultClusterIssuerSecretApiTokenKey]
+		current.Type = s.Type
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert cluster issuer secret %q: %w",
+			store.GetObjectKey(s), err)
+	}
+
+	u.log.V(1).Info("cluster issuer secret upserted", "resource", store.GetObjectKey(s), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertIssuer(i *cert.Issuer, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert issuer", "resource", store.GetObjectKey(i), "generation", gen)
+
+	mgrClient := u.manager.GetClient()
+	current := &cert.Issuer{ObjectMeta: metav1.ObjectMeta{
+		Name:      i.GetName(),
+		Namespace: i.GetNamespace(),
+	}}
+
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		if err := mergeMetadata(current, i); err != nil {
+			return nil
+		}
+
+		// rewrite spec
+		i.Spec.DeepCopyInto(&current.Spec)
+
+		u.log.Info("issuer", "i", i)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert issuer %q: %w",
+			store.GetObjectKey(i), err)
+	}
+
+	u.log.V(1).Info("issuer upserted", "resource", store.GetObjectKey(i), "generation",
 		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
 
 	return op, nil

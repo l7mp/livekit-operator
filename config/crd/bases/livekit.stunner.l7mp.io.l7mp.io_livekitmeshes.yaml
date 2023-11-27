@@ -38,7 +38,47 @@ spec:
               components:
                 properties:
                   certManager:
-                    description: CertManager manages the cert TODO
+                    description: CertManager will obtain certificates from a variety
+                      of Issuers, both popular public Issuers and private Issuers,
+                      and ensure the certificates are valid and up-to-date, and will
+                      attempt to renew certificates at a configured time before expiry.
+                    properties:
+                      issuer:
+                        description: Issuer holds the necessary configuration about
+                          the used Issuer
+                        properties:
+                          apiToken:
+                            description: ApiToken is the API token for the CloudFlare
+                              account that owns the challenged DnsZone
+                            type: string
+                          challengeSolver:
+                            description: ChallengeSolver Used to configure a DNS01
+                              challenge provider to be used when solving DNS01 challenges.
+                            enum:
+                            - cloudflare
+                            - route53
+                            - clouddns
+                            - digitalocean
+                            - azuredns
+                            type: string
+                          dnsZone:
+                            description: DnsZone Certificate requests will be issues
+                              against this DnsZone. This ChallengeSolver will use
+                              this to solve the challenge.
+                            type: string
+                          email:
+                            description: Email is the email address to be associated
+                              with the ACME account. This field is optional, but it
+                              is strongly recommended to be set. It will be used to
+                              contact you in case of issues with your account or certificates,
+                              including expiry notification emails. This field may
+                              be updated after the account is initially registered.
+                            type: string
+                        required:
+                        - apiToken
+                        - challengeSolver
+                        - dnsZone
+                        type: object
                     type: object
                   egress:
                     description: LiveKit's Egress resource descriptor. Egress makes
