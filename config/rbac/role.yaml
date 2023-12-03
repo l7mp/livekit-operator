@@ -19,7 +19,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - livekit.stunner.l7mp.io.l7mp.io
+  - livekit.stunner.l7mp.io
   resources:
   - livekitmeshes
   verbs:
@@ -31,13 +31,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - livekit.stunner.l7mp.io.l7mp.io
+  - livekit.stunner.l7mp.io
   resources:
   - livekitmeshes/finalizers
   verbs:
   - update
 - apiGroups:
-  - livekit.stunner.l7mp.io.l7mp.io
+  - livekit.stunner.l7mp.io
   resources:
   - livekitmeshes/status
   verbs:

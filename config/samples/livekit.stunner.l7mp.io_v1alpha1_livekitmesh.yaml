@@ -1,4 +1,4 @@
-apiVersion: livekit.stunner.l7mp.io.l7mp.io/v1alpha1
+apiVersion: livekit.stunner.l7mp.io/v1alpha1
 kind: LiveKitMesh
 metadata:
   labels:
@@ -19,8 +19,8 @@ spec:
             access_token: secretsecretsecretsecretsecretsecret
           log_level: debug
           port: 7880
-          redis:
-            address: redis.default.svc:6379
+#          redis:
+#            address: redis.default.svc:6379
           rtc:
             port_range_end: 60000
             port_range_start: 50000

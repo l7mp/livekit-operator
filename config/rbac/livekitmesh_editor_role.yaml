@@ -12,7 +12,7 @@ metadata:
   name: livekitmesh-editor-role
 rules:
 - apiGroups:
-  - livekit.stunner.l7mp.io.l7mp.io
+  - livekit.stunner.l7mp.io
   resources:
   - livekitmeshes
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - livekit.stunner.l7mp.io.l7mp.io
+  - livekit.stunner.l7mp.io
   resources:
   - livekitmeshes/status
   verbs:
