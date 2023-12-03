@@ -65,7 +65,7 @@ func main() {
 	var enableLeaderElection bool
 
 	flag.StringVar(&controllerName, "controller-name", opdefault.DefaultControllerName,
-		"The conroller name to be used in the GatewayClass resource to bind it to this operator.")
+		"The controller name to be used in the GatewayClass resource to bind it to this operator.")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
