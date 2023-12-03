@@ -44,6 +44,10 @@ func ConfigMapNameFormat(lkDeploymentName string) string {
 	return fmt.Sprintf("%s-config", lkDeploymentName)
 }
 
+func RedisNameFormat(lkMeshName string) string {
+	return fmt.Sprintf("%s-redis", lkMeshName)
+}
+
 //func ParseLiveKitConfigMap(cm v1.ConfigMap) (lkstnv1a1.LiveKitConfig, error) {
 //	var lkConfig lkstnv1a1.LiveKitConfig
 //

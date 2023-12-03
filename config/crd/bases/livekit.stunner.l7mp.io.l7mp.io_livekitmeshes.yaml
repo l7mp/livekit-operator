@@ -138,6 +138,11 @@ spec:
                               port:
                                 type: integer
                               redis:
+                                description: Redis holds the configuration for the
+                                  Redis deployment If the field is configured, no
+                                  redis will be created by the operator, in this case
+                                  user deployed Redis deployment is required If it
+                                  is omitted, a default Redis will be created.
                                 properties:
                                   address:
                                     type: string

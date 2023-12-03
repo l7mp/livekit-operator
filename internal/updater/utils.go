@@ -218,6 +218,57 @@ func (u *Updater) upsertIssuer(i *cert.Issuer, gen int) (ctrlutil.OperationResul
 	return op, nil
 }
 
+func (u *Updater) upsertStatefulSet(ss *v1.StatefulSet, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert issuer", "resource", store.GetObjectKey(ss), "generation", gen)
+
+	current := &v1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ss.GetName(),
+			Namespace: ss.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, ss)
+		if err != nil {
+			return err
+		}
+
+		current.Spec.ServiceName = ss.Spec.ServiceName
+		current.Spec.Selector = ss.Spec.Selector
+		if ss.Spec.Replicas != nil {
+			current.Spec.Replicas = ss.Spec.Replicas
+		}
+		//ss.Spec.Selector.DeepCopyInto(current.Spec.Selector)
+		ss.Spec.Template.ObjectMeta.DeepCopyInto(&current.Spec.Template.ObjectMeta)
+
+		currentSpec := &current.Spec.Template.Spec
+		ssSpec := &ss.Spec.Template.Spec
+
+		currentSpec.Volumes = make([]corev1.Volume, len(ssSpec.Volumes))
+		for i := range ssSpec.Volumes {
+			ssSpec.Volumes[i].DeepCopyInto(&currentSpec.Volumes[i])
+		}
+
+		currentSpec.Containers = make([]corev1.Container, len(ssSpec.Containers))
+		for i := range ssSpec.Containers {
+			ssSpec.Containers[i].DeepCopyInto(&currentSpec.Containers[i])
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert statefulset %q: %w",
+			store.GetObjectKey(ss), err)
+	}
+
+	u.log.V(1).Info("statefulset upserted", "resource", store.GetObjectKey(ss), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
 func mergeMetadata(dst, src client.Object) error {
 	labs := labels.Merge(dst.GetLabels(), src.GetLabels())
 	dst.SetLabels(labs)

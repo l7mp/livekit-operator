@@ -103,6 +103,10 @@ type Keys struct {
 	AccessToken *string `yaml:"access_token" json:"access_token,omitempty"`
 }
 
+// Redis holds the configuration for the Redis deployment
+// If the field is configured, no redis will be created by the operator, in this case
+// user deployed Redis deployment is required
+// If it is omitted, a default Redis will be created.
 type Redis struct {
 	Address *string `yaml:"address" json:"address,omitempty"`
 }
@@ -245,25 +249,6 @@ type Gateway struct {
 	// The value of this filed will be present in the SVC's annotation list
 	RelatedStunnerGatewayAnnotations *NamespacedName `json:"relatedStunnerGatewayAnnotations"`
 }
-
-//type StunnerGatewayOperator struct {
-//
-//	// Enable sets whether the Chart should be installed or not
-//
-//	Enable *bool `json:"enable"`
-//
-//}
-//
-//type Helm struct {
-//
-//	// StunnerGatewayOperator holds the values for the STUNner Gateway Operator (https://github.com/l7mp/stunner)
-//	// chart.
-//	//
-//	//
-//	// +kubebuilder:validation:Required
-//	StunnerGatewayOperator *StunnerGatewayOperator `json:"stunnerGatewayOperator"`
-//
-//}
 
 type Component struct {
 

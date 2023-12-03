@@ -85,7 +85,7 @@ func (u *Updater) processUpdate(e *event.Update) error {
 		}
 	}
 
-	for _, s := range uq.Secret.GetAll() {
+	for _, s := range uq.Secrets.GetAll() {
 		if op, err := u.upsertSecret(s, gen); err != nil {
 			u.log.Error(err, "cannot update secret", "operation", op)
 		}
@@ -94,6 +94,13 @@ func (u *Updater) processUpdate(e *event.Update) error {
 	for _, i := range uq.Issuer.GetAll() {
 		if op, err := u.upsertIssuer(i, gen); err != nil {
 			u.log.Error(err, "cannot update issuer", "operation", op)
+		}
+	}
+
+	// TODO this might fail if the svc is not ready yet, there is need for a separate goroutine and watch for the svc
+	for _, ss := range uq.StatefulSets.GetAll() {
+		if op, err := u.upsertStatefulSet(ss, gen); err != nil {
+			u.log.Error(err, "cannot update statefulset", "operation", op)
 		}
 	}
 	return nil

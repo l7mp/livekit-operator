@@ -11,7 +11,8 @@ type UpdateConf struct {
 	Services      *store.ServiceStore
 	Deployments   *store.DeploymentStore
 	Issuer        *store.IssuerStore
-	Secret        *store.SecretStore
+	Secrets       *store.SecretStore
+	StatefulSets  *store.StatefulSetStore
 }
 
 type Update struct {
@@ -31,7 +32,8 @@ func NewEventUpdate(generation int) *Update {
 			Services:      store.NewServiceStore(),
 			Deployments:   store.NewDeploymentStore(),
 			Issuer:        store.NewIssuerStore(),
-			Secret:        store.NewSecretStore(),
+			Secrets:       store.NewSecretStore(),
+			StatefulSets:  store.NewStatefulSetStore(),
 		},
 		DeleteQueue: UpdateConf{
 			LiveKitMeshes: store.NewLivekitMeshStore(),

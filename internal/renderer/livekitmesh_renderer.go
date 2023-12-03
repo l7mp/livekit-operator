@@ -61,6 +61,7 @@ func (r *Renderer) renderLiveKitComponentResources(renderContext *RenderContext)
 	r.renderLiveKitConfigMap(renderContext)
 	r.renderLiveKitDeployment(renderContext)
 	r.renderLiveKitService(renderContext)
+	r.renderLiveKitRedis(renderContext)
 }
 
 func (r *Renderer) renderCertManagerComponentResources(renderContext *RenderContext) {
@@ -91,9 +92,9 @@ func (r *Renderer) renderCertManagerIssuerAndSecret(context *RenderContext) {
 
 	log.V(2).Info("Upserted Cert-Manager Issuer into UpsertQueue", "cm", store.GetObjectKey(issuer))
 
-	context.update.UpsertQueue.Secret.Upsert(secret)
+	context.update.UpsertQueue.Secrets.Upsert(secret)
 
-	log.V(2).Info("Upserted Cert-Manager Secret into UpsertQueue", "cm", store.GetObjectKey(secret))
+	log.V(2).Info("Upserted Cert-Manager Secrets into UpsertQueue", "cm", store.GetObjectKey(secret))
 }
 
 func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
@@ -139,12 +140,12 @@ func (r *Renderer) renderLiveKitService(context *RenderContext) {
 	log.V(2).Info("Upserted LiveKit-Server Service into UpsertQueue", "cm", store.GetObjectKey(service))
 }
 
-func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
+func (r *Renderer) renderLiveKitDeployment(renderContext *RenderContext) {
 	log := r.logger.WithName("renderLiveKitDeployment")
 
 	log.V(2).Info("trying to render LiveKit-Server Deployment")
 
-	lkMesh := context.liveKitMesh
+	lkMesh := renderContext.liveKitMesh
 	deployment := createLiveKitDeployment(lkMesh)
 	if err := controllerutil.SetOwnerReference(lkMesh, deployment, r.scheme); err != nil {
 		log.Error(err, "cannot set owner reference", "owner",
@@ -153,7 +154,49 @@ func (r *Renderer) renderLiveKitDeployment(context *RenderContext) {
 		return
 	}
 
-	context.update.UpsertQueue.Deployments.Upsert(deployment)
+	renderContext.update.UpsertQueue.Deployments.Upsert(deployment)
 
 	log.V(2).Info("Upserted LiveKit-Server Deployment into UpsertQueue", "cm", store.GetObjectKey(deployment))
+}
+
+func (r *Renderer) renderLiveKitRedis(renderContext *RenderContext) {
+	log := r.log.WithName("renderLiveKitRedis")
+
+	log.V(2).Info("trying to render Redis StatefulSets and Service")
+
+	lkMesh := renderContext.liveKitMesh
+	redis := lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis
+
+	if redis == nil {
+		log.V(2).Info("creation of a Redis deployment is required due to empty configuration")
+		redisStatefulSet, redisService := createLiveKitRedis(lkMesh)
+		if err := controllerutil.SetOwnerReference(lkMesh, redisStatefulSet, r.scheme); err != nil {
+			log.Error(err, "cannot set owner reference", "owner",
+				store.GetObjectKey(lkMesh), "reference",
+				store.GetObjectKey(redisStatefulSet))
+			return
+		}
+		if err := controllerutil.SetOwnerReference(lkMesh, redisService, r.scheme); err != nil {
+			log.Error(err, "cannot set owner reference", "owner",
+				store.GetObjectKey(lkMesh), "reference",
+				store.GetObjectKey(redisService))
+			return
+		}
+
+		renderContext.update.UpsertQueue.StatefulSets.Upsert(redisStatefulSet)
+
+		log.V(2).Info("Upserted Redis StatefulSets into UpsertQueue", "cm", store.GetObjectKey(redisStatefulSet))
+
+		renderContext.update.UpsertQueue.Services.Upsert(redisService)
+
+		log.V(2).Info("Upserted Redis Service into UpsertQueue", "cm", store.GetObjectKey(redisService))
+
+		renderContext.update.UpsertQueue.ConfigMaps.Get(types.NamespacedName{
+			Namespace: lkMesh.GetNamespace(),
+			Name:      ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
+		})
+
+	} else {
+		log.V(2).Info("creation of a Redis deployment is NOT required due to configuration", "redis", redis)
+	}
 }

@@ -18,7 +18,7 @@ func NewSecretStore() *SecretStore {
 	}
 }
 
-// GetAll returns all Secret objects from the global storage
+// GetAll returns all Secrets objects from the global storage
 func (s *SecretStore) GetAll() []*corev1.Secret {
 	ret := make([]*corev1.Secret, 0)
 
@@ -36,7 +36,7 @@ func (s *SecretStore) GetAll() []*corev1.Secret {
 	return ret
 }
 
-// GetObject returns a named Secret object from the global storage
+// GetObject returns a named Secrets object from the global storage
 func (s *SecretStore) GetObject(nsName types.NamespacedName) *corev1.Secret {
 	o := s.Get(nsName)
 	if o == nil {

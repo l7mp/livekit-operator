@@ -202,6 +202,135 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 	return dp
 }
 
+func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1.Service) {
+
+	replicasValue := int32(1)
+
+	ss := &v1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      RedisNameFormat(lkMesh.GetName()),
+			Namespace: lkMesh.GetNamespace(),
+			Labels: map[string]string{
+				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+				"app":                           "redis",
+			},
+		},
+		Spec: v1.StatefulSetSpec{
+			ServiceName: RedisNameFormat(lkMesh.GetName()),
+			Replicas:    &replicasValue,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+					opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+					opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+					"app":                           "redis",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+						opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+						opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+						"app":                           "redis",
+					},
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "data",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "config",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "redis-config",
+									},
+									Items: []corev1.KeyToPath{{
+										Key:  "redis-config",
+										Path: "redis.conf",
+									}},
+								},
+							},
+						},
+					},
+					//ServiceAccountName:            "default",
+					//TerminationGracePeriodSeconds: containerSpec.TerminationGracePeriodSeconds,
+					Containers: []corev1.Container{{
+						Name:            "redis",
+						Image:           "redis",
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Command: []string{
+							"redis-server",
+							"/redis-master/redis.conf",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "MASTER",
+								Value: "true",
+							},
+						},
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: 6379,
+						}},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								MountPath: "/redis-master-data",
+								Name:      "data",
+							},
+							{
+								MountPath: "redis-master",
+								Name:      "config",
+							},
+						},
+					}},
+				},
+			},
+		},
+	}
+
+	// MUST be headless svc
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      RedisNameFormat(lkMesh.GetName()),
+			Namespace: lkMesh.GetNamespace(),
+			Labels: map[string]string{
+				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+				"app":                           "redis",
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Port:     6379,
+					Protocol: corev1.ProtocolTCP,
+					TargetPort: intstr.IntOrString{
+						IntVal: 6379,
+						StrVal: "6379",
+					},
+				},
+			},
+			Selector: map[string]string{
+				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+				"app":                           "redis",
+			},
+			ClusterIP: "None",
+		},
+	}
+
+	return ss, svc
+}
+
 // fetchVersion fetches the version from the specified image
 func fetchVersion(image string) string {
 	// Find the last ":" in the input string
