@@ -169,7 +169,7 @@ func (r *Renderer) renderLiveKitRedis(renderContext *RenderContext) {
 
 	if redis == nil {
 		log.V(2).Info("creation of a Redis deployment is required due to empty configuration")
-		redisStatefulSet, redisService := createLiveKitRedis(lkMesh)
+		redisStatefulSet, redisService, redisConfigMap := createLiveKitRedis(lkMesh)
 		if err := controllerutil.SetOwnerReference(lkMesh, redisStatefulSet, r.scheme); err != nil {
 			log.Error(err, "cannot set owner reference", "owner",
 				store.GetObjectKey(lkMesh), "reference",
@@ -183,18 +183,30 @@ func (r *Renderer) renderLiveKitRedis(renderContext *RenderContext) {
 			return
 		}
 
+		if err := controllerutil.SetOwnerReference(lkMesh, redisConfigMap, r.scheme); err != nil {
+			log.Error(err, "cannot set owner reference", "owner",
+				store.GetObjectKey(lkMesh), "reference",
+				store.GetObjectKey(redisConfigMap))
+			return
+		}
+
 		renderContext.update.UpsertQueue.StatefulSets.Upsert(redisStatefulSet)
 
-		log.V(2).Info("Upserted Redis StatefulSets into UpsertQueue", "cm", store.GetObjectKey(redisStatefulSet))
+		log.V(2).Info("Upserted Redis StatefulSets into UpsertQueue", "ss", store.GetObjectKey(redisStatefulSet))
 
 		renderContext.update.UpsertQueue.Services.Upsert(redisService)
 
-		log.V(2).Info("Upserted Redis Service into UpsertQueue", "cm", store.GetObjectKey(redisService))
+		log.V(2).Info("Upserted Redis Service into UpsertQueue", "svc", store.GetObjectKey(redisService))
 
-		renderContext.update.UpsertQueue.ConfigMaps.Get(types.NamespacedName{
+		renderContext.update.UpsertQueue.ConfigMaps.Upsert(redisConfigMap)
+
+		log.V(2).Info("Upserted Redis ConfigMap into UpsertQueue", "cm", store.GetObjectKey(redisConfigMap))
+
+		//TODO why was the below added on the first hand?
+		/*	renderContext.update.UpsertQueue.ConfigMaps.Get(types.NamespacedName{
 			Namespace: lkMesh.GetNamespace(),
 			Name:      ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
-		})
+		})*/
 
 	} else {
 		log.V(2).Info("creation of a Redis deployment is NOT required due to configuration", "redis", redis)

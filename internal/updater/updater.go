@@ -69,7 +69,7 @@ func (u *Updater) processUpdate(e *event.Update) error {
 
 	for _, cm := range uq.ConfigMaps.GetAll() {
 		if op, err := u.upsertConfigMap(cm, gen); err != nil {
-			u.log.Error(err, "cannot update deployment", "operation", op)
+			u.log.Error(err, "cannot update configmap", "operation", op)
 		}
 	}
 

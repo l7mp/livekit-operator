@@ -202,7 +202,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 	return dp
 }
 
-func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1.Service) {
+func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1.Service, *corev1.ConfigMap) {
 
 	replicasValue := int32(1)
 
@@ -285,7 +285,7 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1
 								Name:      "data",
 							},
 							{
-								MountPath: "redis-master",
+								MountPath: "/redis-master",
 								Name:      "config",
 							},
 						},
@@ -328,7 +328,22 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1
 		},
 	}
 
-	return ss, svc
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "redis-config",
+			Namespace: lkMesh.GetNamespace(),
+			Labels: map[string]string{
+				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+			},
+		},
+		Data: map[string]string{
+			"redis-config": "bind 0.0.0.0",
+		},
+	}
+
+	return ss, svc, cm
 }
 
 // fetchVersion fetches the version from the specified image
