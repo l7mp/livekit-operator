@@ -6,13 +6,17 @@ import (
 
 // UpdateConf render event
 type UpdateConf struct {
-	ConfigMaps    *store.ConfigMapStore
-	LiveKitMeshes *store.LiveKitMeshStore
-	Services      *store.ServiceStore
-	Deployments   *store.DeploymentStore
-	Issuer        *store.IssuerStore
-	Secrets       *store.SecretStore
-	StatefulSets  *store.StatefulSetStore
+	ConfigMaps     *store.ConfigMapStore
+	LiveKitMeshes  *store.LiveKitMeshStore
+	Services       *store.ServiceStore
+	Deployments    *store.DeploymentStore
+	Issuer         *store.IssuerStore
+	Secrets        *store.SecretStore
+	StatefulSets   *store.StatefulSetStore
+	UDPRoutes      *store.UDPRouteStore
+	Gateways       *store.GatewayStore
+	GatewayClasses *store.GatewayClassStore
+	GatewayConfigs *store.GatewayConfigStore
 }
 
 type Update struct {
@@ -27,13 +31,17 @@ func NewEventUpdate(generation int) *Update {
 	return &Update{
 		Type: TypeUpdate,
 		UpsertQueue: UpdateConf{
-			LiveKitMeshes: store.NewLivekitMeshStore(),
-			ConfigMaps:    store.NewConfigMapStore(),
-			Services:      store.NewServiceStore(),
-			Deployments:   store.NewDeploymentStore(),
-			Issuer:        store.NewIssuerStore(),
-			Secrets:       store.NewSecretStore(),
-			StatefulSets:  store.NewStatefulSetStore(),
+			LiveKitMeshes:  store.NewLivekitMeshStore(),
+			ConfigMaps:     store.NewConfigMapStore(),
+			Services:       store.NewServiceStore(),
+			Deployments:    store.NewDeploymentStore(),
+			Issuer:         store.NewIssuerStore(),
+			Secrets:        store.NewSecretStore(),
+			StatefulSets:   store.NewStatefulSetStore(),
+			UDPRoutes:      store.NewUDPRouteStore(),
+			Gateways:       store.NewGatewayStore(),
+			GatewayClasses: store.NewGatewayClassStore(),
+			GatewayConfigs: store.NewGatewayConfigStore(),
 		},
 		DeleteQueue: UpdateConf{
 			LiveKitMeshes: store.NewLivekitMeshStore(),

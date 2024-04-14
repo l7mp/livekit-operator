@@ -63,3 +63,19 @@ func RedisNameFormat(lkMeshName string) string {
 //
 //	return lkConfig, nil
 //}
+
+func GetStunnerGatewayName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-udp-gateway")
+}
+
+func GetStunnerGatewayConfigName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-gatewayconfig")
+}
+
+func GetStunnerGatewayClassName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-gatewayclass")
+}
+
+func GetStunnerUDPRouteName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-udproute")
+}

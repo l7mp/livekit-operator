@@ -13,7 +13,7 @@ spec:
   components:
     liveKit:
       deployment:
-        replicas: 1 #opt
+        replicas: 2 #opt
         config:
           keys:
             access_token: secretsecretsecretsecretsecretsecret
@@ -53,18 +53,29 @@ spec:
         challengeSolver: cloudflare
         dnsZone: example.com
         email: dummy@dummy.com
-#    gateway:
-#      relatedStunnerGatewayAnnotations:
-#        name: udp-gateway
-#        namespace: stunner-gateway-system
+    gateway:
+      relatedStunnerGatewayAnnotations:
+        name: udp-gateway
+        namespace: stunner-gateway-system
+    stunner:
+      gatewayConfig:
+        realm: stunner.l7mp.io
+        authType: static
+        userName: "user-1"
+        password: "password"
+      gatewayListeners:
+        - name: udp-listener
+          port: 3478
+          protocol: TURN-UDP
+
 #      service:
-  #        name: lk-control
-  #        type: LoadBalancer
-  #        ports:
-  #          - port: 1
-  #            protocol: TCP
-  #          - port: 2
-  #            protocol: TCP
+#          name: lk-control
+#          type: LoadBalancer
+#          ports:
+#            - port: 1
+#              protocol: TCP
+#            - port: 2
+#              protocol: TCP
   #
   #
   #

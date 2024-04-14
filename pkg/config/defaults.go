@@ -66,6 +66,7 @@ const (
 	ComponentGateway     = "GATEWAY"
 	ComponentCertManager = "CERTMANAGER"
 	ComponentMonitoring  = "MONITORING"
+	ComponentStunner     = "STUNNER"
 )
 
 // Issuer challenge provider types

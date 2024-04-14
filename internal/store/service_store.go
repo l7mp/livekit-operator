@@ -17,7 +17,7 @@ func NewServiceStore() *ServiceStore {
 	}
 }
 
-// GetAll returns all ConfigMap objects from the global storage
+// GetAll returns all Service objects from the global storage
 func (s *ServiceStore) GetAll() []*corev1.Service {
 	ret := make([]*corev1.Service, 0)
 
@@ -35,7 +35,7 @@ func (s *ServiceStore) GetAll() []*corev1.Service {
 	return ret
 }
 
-// GetObject returns a named ConfigMap object from the global storage
+// GetObject returns a named Service object from the global storage
 func (s *ServiceStore) GetObject(nsName types.NamespacedName) *corev1.Service {
 	o := s.Get(nsName)
 	if o == nil {

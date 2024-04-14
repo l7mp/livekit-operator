@@ -17,8 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type Container struct {
@@ -250,6 +252,15 @@ type Gateway struct {
 	RelatedStunnerGatewayAnnotations *NamespacedName `json:"relatedStunnerGatewayAnnotations"`
 }
 
+type Stunner struct {
+
+	// GatewayConfig is the configuration for the STUNner deployment's GatewayConfig object
+	GatewayConfig *stnrgwv1.GatewayConfigSpec `json:"gatewayConfig"`
+
+	// GatewayListeners is the configuration of the STUNner deployment's Gateway object
+	GatewayListeners []gwapiv1.Listener `json:"gatewayListeners"`
+}
+
 type Component struct {
 
 	// LiveKit is the main resource that the operator manages. By default, it supports
@@ -297,6 +308,12 @@ type Component struct {
 	////
 	//// +kubebuilder:validation:Required
 	//Helm *Helm `json:"helm"`
+
+	// Stunner holds the configuration for the to-be created STUNner resources.
+	// These resources provide the necessary resources for a possible/successful TURN connection
+	//
+	// +optional
+	Stunner *Stunner `json:"stunner"`
 }
 
 // LiveKitMeshSpec defines the desired state of LiveKitMesh

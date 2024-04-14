@@ -487,7 +487,8 @@ spec:
                                                 labelSelector:
                                                   description: A label query over
                                                     a set of resources, in this case
-                                                    pods.
+                                                    pods. If it's null, this PodAffinityTerm
+                                                    matches with no Pods.
                                                   properties:
                                                     matchExpressions:
                                                       description: matchExpressions
@@ -550,6 +551,58 @@ spec:
                                                       type: object
                                                   type: object
                                                   x-kubernetes-map-type: atomic
+                                                matchLabelKeys:
+                                                  description: MatchLabelKeys is a
+                                                    set of pod label keys to select
+                                                    which pods will be taken into
+                                                    consideration. The keys are used
+                                                    to lookup values from the incoming
+                                                    pod labels, those key-value labels
+                                                    are merged with `LabelSelector`
+                                                    as `key in (value)` to select
+                                                    the group of existing pods which
+                                                    pods will be taken into consideration
+                                                    for the incoming pod's pod (anti)
+                                                    affinity. Keys that don't exist
+                                                    in the incoming pod labels will
+                                                    be ignored. The default value
+                                                    is empty. The same key is forbidden
+                                                    to exist in both MatchLabelKeys
+                                                    and LabelSelector. Also, MatchLabelKeys
+                                                    cannot be set when LabelSelector
+                                                    isn't set. This is an alpha field
+                                                    and requires enabling MatchLabelKeysInPodAffinity
+                                                    feature gate.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                  x-kubernetes-list-type: atomic
+                                                mismatchLabelKeys:
+                                                  description: MismatchLabelKeys is
+                                                    a set of pod label keys to select
+                                                    which pods will be taken into
+                                                    consideration. The keys are used
+                                                    to lookup values from the incoming
+                                                    pod labels, those key-value labels
+                                                    are merged with `LabelSelector`
+                                                    as `key notin (value)` to select
+                                                    the group of existing pods which
+                                                    pods will be taken into consideration
+                                                    for the incoming pod's pod (anti)
+                                                    affinity. Keys that don't exist
+                                                    in the incoming pod labels will
+                                                    be ignored. The default value
+                                                    is empty. The same key is forbidden
+                                                    to exist in both MismatchLabelKeys
+                                                    and LabelSelector. Also, MismatchLabelKeys
+                                                    cannot be set when LabelSelector
+                                                    isn't set. This is an alpha field
+                                                    and requires enabling MatchLabelKeysInPodAffinity
+                                                    feature gate.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                  x-kubernetes-list-type: atomic
                                                 namespaceSelector:
                                                   description: A label query over
                                                     the set of namespaces that the
@@ -689,7 +742,9 @@ spec:
                                           properties:
                                             labelSelector:
                                               description: A label query over a set
-                                                of resources, in this case pods.
+                                                of resources, in this case pods. If
+                                                it's null, this PodAffinityTerm matches
+                                                with no Pods.
                                               properties:
                                                 matchExpressions:
                                                   description: matchExpressions is
@@ -748,6 +803,54 @@ spec:
                                                   type: object
                                               type: object
                                               x-kubernetes-map-type: atomic
+                                            matchLabelKeys:
+                                              description: MatchLabelKeys is a set
+                                                of pod label keys to select which
+                                                pods will be taken into consideration.
+                                                The keys are used to lookup values
+                                                from the incoming pod labels, those
+                                                key-value labels are merged with `LabelSelector`
+                                                as `key in (value)` to select the
+                                                group of existing pods which pods
+                                                will be taken into consideration for
+                                                the incoming pod's pod (anti) affinity.
+                                                Keys that don't exist in the incoming
+                                                pod labels will be ignored. The default
+                                                value is empty. The same key is forbidden
+                                                to exist in both MatchLabelKeys and
+                                                LabelSelector. Also, MatchLabelKeys
+                                                cannot be set when LabelSelector isn't
+                                                set. This is an alpha field and requires
+                                                enabling MatchLabelKeysInPodAffinity
+                                                feature gate.
+                                              items:
+                                                type: string
+                                              type: array
+                                              x-kubernetes-list-type: atomic
+                                            mismatchLabelKeys:
+                                              description: MismatchLabelKeys is a
+                                                set of pod label keys to select which
+                                                pods will be taken into consideration.
+                                                The keys are used to lookup values
+                                                from the incoming pod labels, those
+                                                key-value labels are merged with `LabelSelector`
+                                                as `key notin (value)` to select the
+                                                group of existing pods which pods
+                                                will be taken into consideration for
+                                                the incoming pod's pod (anti) affinity.
+                                                Keys that don't exist in the incoming
+                                                pod labels will be ignored. The default
+                                                value is empty. The same key is forbidden
+                                                to exist in both MismatchLabelKeys
+                                                and LabelSelector. Also, MismatchLabelKeys
+                                                cannot be set when LabelSelector isn't
+                                                set. This is an alpha field and requires
+                                                enabling MatchLabelKeysInPodAffinity
+                                                feature gate.
+                                              items:
+                                                type: string
+                                              type: array
+                                              x-kubernetes-list-type: atomic
                                             namespaceSelector:
                                               description: A label query over the
                                                 set of namespaces that the term applies
@@ -879,7 +982,8 @@ spec:
                                                 labelSelector:
                                                   description: A label query over
                                                     a set of resources, in this case
-                                                    pods.
+                                                    pods. If it's null, this PodAffinityTerm
+                                                    matches with no Pods.
                                                   properties:
                                                     matchExpressions:
                                                       description: matchExpressions
@@ -942,6 +1046,58 @@ spec:
                                                       type: object
                                                   type: object
                                                   x-kubernetes-map-type: atomic
+                                                matchLabelKeys:
+                                                  description: MatchLabelKeys is a
+                                                    set of pod label keys to select
+                                                    which pods will be taken into
+                                                    consideration. The keys are used
+                                                    to lookup values from the incoming
+                                                    pod labels, those key-value labels
+                                                    are merged with `LabelSelector`
+                                                    as `key in (value)` to select
+                                                    the group of existing pods which
+                                                    pods will be taken into consideration
+                                                    for the incoming pod's pod (anti)
+                                                    affinity. Keys that don't exist
+                                                    in the incoming pod labels will
+                                                    be ignored. The default value
+                                                    is empty. The same key is forbidden
+                                                    to exist in both MatchLabelKeys
+                                                    and LabelSelector. Also, MatchLabelKeys
+                                                    cannot be set when LabelSelector
+                                                    isn't set. This is an alpha field
+                                                    and requires enabling MatchLabelKeysInPodAffinity
+                                                    feature gate.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                  x-kubernetes-list-type: atomic
+                                                mismatchLabelKeys:
+                                                  description: MismatchLabelKeys is
+                                                    a set of pod label keys to select
+                                                    which pods will be taken into
+                                                    consideration. The keys are used
+                                                    to lookup values from the incoming
+                                                    pod labels, those key-value labels
+                                                    are merged with `LabelSelector`
+                                                    as `key notin (value)` to select
+                                                    the group of existing pods which
+                                                    pods will be taken into consideration
+                                                    for the incoming pod's pod (anti)
+                                                    affinity. Keys that don't exist
+                                                    in the incoming pod labels will
+                                                    be ignored. The default value
+                                                    is empty. The same key is forbidden
+                                                    to exist in both MismatchLabelKeys
+                                                    and LabelSelector. Also, MismatchLabelKeys
+                                                    cannot be set when LabelSelector
+                                                    isn't set. This is an alpha field
+                                                    and requires enabling MatchLabelKeysInPodAffinity
+                                                    feature gate.
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                                  x-kubernetes-list-type: atomic
                                                 namespaceSelector:
                                                   description: A label query over
                                                     the set of namespaces that the
@@ -1081,7 +1237,9 @@ spec:
                                           properties:
                                             labelSelector:
                                               description: A label query over a set
-                                                of resources, in this case pods.
+                                                of resources, in this case pods. If
+                                                it's null, this PodAffinityTerm matches
+                                                with no Pods.
                                               properties:
                                                 matchExpressions:
                                                   description: matchExpressions is
@@ -1140,6 +1298,54 @@ spec:
                                                   type: object
                                               type: object
                                               x-kubernetes-map-type: atomic
+                                            matchLabelKeys:
+                                              description: MatchLabelKeys is a set
+                                                of pod label keys to select which
+                                                pods will be taken into consideration.
+                                                The keys are used to lookup values
+                                                from the incoming pod labels, those
+                                                key-value labels are merged with `LabelSelector`
+                                                as `key in (value)` to select the
+                                                group of existing pods which pods
+                                                will be taken into consideration for
+                                                the incoming pod's pod (anti) affinity.
+                                                Keys that don't exist in the incoming
+                                                pod labels will be ignored. The default
+                                                value is empty. The same key is forbidden
+                                                to exist in both MatchLabelKeys and
+                                                LabelSelector. Also, MatchLabelKeys
+                                                cannot be set when LabelSelector isn't
+                                                set. This is an alpha field and requires
+                                                enabling MatchLabelKeysInPodAffinity
+                                                feature gate.
+                                              items:
+                                                type: string
+                                              type: array
+                                              x-kubernetes-list-type: atomic
+                                            mismatchLabelKeys:
+                                              description: MismatchLabelKeys is a
+                                                set of pod label keys to select which
+                                                pods will be taken into consideration.
+                                                The keys are used to lookup values
+                                                from the incoming pod labels, those
+                                                key-value labels are merged with `LabelSelector`
+                                                as `key notin (value)` to select the
+                                                group of existing pods which pods
+                                                will be taken into consideration for
+                                                the incoming pod's pod (anti) affinity.
+                                                Keys that don't exist in the incoming
+                                                pod labels will be ignored. The default
+                                                value is empty. The same key is forbidden
+                                                to exist in both MismatchLabelKeys
+                                                and LabelSelector. Also, MismatchLabelKeys
+                                                cannot be set when LabelSelector isn't
+                                                set. This is an alpha field and requires
+                                                enabling MatchLabelKeysInPodAffinity
+                                                feature gate.
+                                              items:
+                                                type: string
+                                              type: array
+                                              x-kubernetes-list-type: atomic
                                             namespaceSelector:
                                               description: A label query over the
                                                 set of namespaces that the term applies
@@ -1720,6 +1926,473 @@ spec:
                     description: Monitoring enables the Prometheus metric exposition,
                       installs a Prometheus operator and Grafana operator with the
                       corresponding resources
+                    type: object
+                  stunner:
+                    description: Stunner holds the configuration for the to-be created
+                      STUNner resources. These resources provide the necessary resources
+                      for a possible/successful TURN connection
+                    properties:
+                      gatewayConfig:
+                        description: GatewayConfig is the configuration for the STUNner
+                          deployment's GatewayConfig object
+                        properties:
+                          authLifetime:
+                            description: AuthLifetime defines the lifetime of "longterm"
+                              authentication credentials in seconds.
+                            format: int32
+                            type: integer
+                          authRef:
+                            description: 'Note that externally set credentials override
+                              any inline auth credentials (AuthType, AuthUsername,
+                              etc.): if AuthRef is nonempty then it is expected that
+                              the referenced Secret exists and *all* authentication
+                              credentials are correctly set in the referenced Secret
+                              (username/password or shared secret). Mixing of credential
+                              sources (inline/external) is not supported.'
+                            properties:
+                              group:
+                                default: ""
+                                description: Group is the group of the referent. For
+                                  example, "gateway.networking.k8s.io". When unspecified
+                                  or empty string, core API group is inferred.
+                                maxLength: 253
+                                pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                type: string
+                              kind:
+                                default: Secret
+                                description: Kind is kind of the referent. For example
+                                  "Secret".
+                                maxLength: 63
+                                minLength: 1
+                                pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                type: string
+                              name:
+                                description: Name is the name of the referent.
+                                maxLength: 253
+                                minLength: 1
+                                type: string
+                              namespace:
+                                description: "Namespace is the namespace of the referenced
+                                  object. When unspecified, the local namespace is
+                                  inferred. \n Note that when a namespace different
+                                  than the local namespace is specified, a ReferenceGrant
+                                  object is required in the referent namespace to
+                                  allow that namespace's owner to accept the reference.
+                                  See the ReferenceGrant documentation for details.
+                                  \n Support: Core"
+                                maxLength: 63
+                                minLength: 1
+                                pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          authType:
+                            default: plaintext
+                            description: AuthType is the type of the STUN/TURN authentication
+                              mechanism.
+                            pattern: ^plaintext|static|longterm|ephemeral|timewindowed$
+                            type: string
+                          dataplane:
+                            default: default
+                            description: Dataplane defines the dataplane (stunnerd
+                              image, version, etc) for STUNner gateways using this
+                              GatewayConfig.
+                            type: string
+                          loadBalancerServiceAnnotations:
+                            additionalProperties:
+                              type: string
+                            description: "LoadBalancerServiceAnnotations is a list
+                              of annotations that will go into the LoadBalancer services
+                              created automatically by the operator to wrap Gateways.
+                              \n NOTE: removing annotations from a GatewayConfig will
+                              not result in the removal of the corresponding annotations
+                              from the LoadBalancer service, in order to prevent the
+                              accidental removal of an annotation installed there
+                              by Kubernetes or the cloud provider. If you really want
+                              to remove an annotation, do this manually or simply
+                              remove all Gateways (which will remove the corresponding
+                              LoadBalancer services), update the GatewayConfig and
+                              then recreate the Gateways, so that the newly created
+                              LoadBalancer services will contain the required annotations."
+                            type: object
+                          logLevel:
+                            description: LogLevel specifies the default loglevel for
+                              the STUNner daemon.
+                            type: string
+                          password:
+                            description: Password defines the `password` credential
+                              for "plaintext" authentication.
+                            pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                            type: string
+                          realm:
+                            default: stunner.l7mp.io
+                            description: "Realm defines the STUN/TURN authentication
+                              realm to be used for clients toauthenticate with STUNner.
+                              \n The realm must consist of lower case alphanumeric
+                              characters or '-', and must start and end with an alphanumeric
+                              character. No other punctuation is allowed."
+                            pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                            type: string
+                          sharedSecret:
+                            description: SharedSecret defines the shared secret to
+                              be used for "longterm" authentication.
+                            type: string
+                          userName:
+                            description: Username defines the `username` credential
+                              for "plaintext" authentication.
+                            pattern: ^[A-Za-z0-9!#$%&'*+\-.^_\x60|~]+$
+                            type: string
+                        type: object
+                      gatewayListeners:
+                        description: GatewayListeners is the configuration of the
+                          STUNner deployment's Gateway object
+                        items:
+                          description: Listener embodies the concept of a logical
+                            endpoint where a Gateway accepts network connections.
+                          properties:
+                            allowedRoutes:
+                              default:
+                                namespaces:
+                                  from: Same
+                              description: "AllowedRoutes defines the types of routes
+                                that MAY be attached to a Listener and the trusted
+                                namespaces where those Route resources MAY be present.
+                                \n Although a client request may match multiple route
+                                rules, only one rule may ultimately receive the request.
+                                Matching precedence MUST be determined in order of
+                                the following criteria: \n * The most specific match
+                                as defined by the Route type. * The oldest Route based
+                                on creation timestamp. For example, a Route with a
+                                creation timestamp of \"2020-09-08 01:02:03\" is given
+                                precedence over a Route with a creation timestamp
+                                of \"2020-09-08 01:02:04\". * If everything else is
+                                equivalent, the Route appearing first in alphabetical
+                                order (namespace/name) should be given precedence.
+                                For example, foo/bar is given precedence over foo/baz.
+                                \n All valid rules within a Route attached to this
+                                Listener should be implemented. Invalid Route rules
+                                can be ignored (sometimes that will mean the full
+                                Route). If a Route rule transitions from valid to
+                                invalid, support for that Route rule should be dropped
+                                to ensure consistency. For example, even if a filter
+                                specified by a Route rule is invalid, the rest of
+                                the rules within that Route should still be supported.
+                                \n Support: Core"
+                              properties:
+                                kinds:
+                                  description: "Kinds specifies the groups and kinds
+                                    of Routes that are allowed to bind to this Gateway
+                                    Listener. When unspecified or empty, the kinds
+                                    of Routes selected are determined using the Listener
+                                    protocol. \n A RouteGroupKind MUST correspond
+                                    to kinds of Routes that are compatible with the
+                                    application protocol specified in the Listener's
+                                    Protocol field. If an implementation does not
+                                    support or recognize this resource type, it MUST
+                                    set the \"ResolvedRefs\" condition to False for
+                                    this Listener with the \"InvalidRouteKinds\" reason.
+                                    \n Support: Core"
+                                  items:
+                                    description: RouteGroupKind indicates the group
+                                      and kind of a Route resource.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: Group is the group of the Route.
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        description: Kind is the kind of the Route.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                    required:
+                                    - kind
+                                    type: object
+                                  maxItems: 8
+                                  type: array
+                                namespaces:
+                                  default:
+                                    from: Same
+                                  description: "Namespaces indicates namespaces from
+                                    which Routes may be attached to this Listener.
+                                    This is restricted to the namespace of this Gateway
+                                    by default. \n Support: Core"
+                                  properties:
+                                    from:
+                                      default: Same
+                                      description: "From indicates where Routes will
+                                        be selected for this Gateway. Possible values
+                                        are: \n * All: Routes in all namespaces may
+                                        be used by this Gateway. * Selector: Routes
+                                        in namespaces selected by the selector may
+                                        be used by this Gateway. * Same: Only Routes
+                                        in the same namespace may be used by this
+                                        Gateway. \n Support: Core"
+                                      enum:
+                                      - All
+                                      - Selector
+                                      - Same
+                                      type: string
+                                    selector:
+                                      description: "Selector must be specified when
+                                        From is set to \"Selector\". In that case,
+                                        only Routes in Namespaces matching this Selector
+                                        will be selected by this Gateway. This field
+                                        is ignored for other values of \"From\". \n
+                                        Support: Core"
+                                      properties:
+                                        matchExpressions:
+                                          description: matchExpressions is a list
+                                            of label selector requirements. The requirements
+                                            are ANDed.
+                                          items:
+                                            description: A label selector requirement
+                                              is a selector that contains values,
+                                              a key, and an operator that relates
+                                              the key and values.
+                                            properties:
+                                              key:
+                                                description: key is the label key
+                                                  that the selector applies to.
+                                                type: string
+                                              operator:
+                                                description: operator represents a
+                                                  key's relationship to a set of values.
+                                                  Valid operators are In, NotIn, Exists
+                                                  and DoesNotExist.
+                                                type: string
+                                              values:
+                                                description: values is an array of
+                                                  string values. If the operator is
+                                                  In or NotIn, the values array must
+                                                  be non-empty. If the operator is
+                                                  Exists or DoesNotExist, the values
+                                                  array must be empty. This array
+                                                  is replaced during a strategic merge
+                                                  patch.
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                            - key
+                                            - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          description: matchLabels is a map of {key,value}
+                                            pairs. A single {key,value} in the matchLabels
+                                            map is equivalent to an element of matchExpressions,
+                                            whose key field is "key", the operator
+                                            is "In", and the values array contains
+                                            only "value". The requirements are ANDed.
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                            hostname:
+                              description: "Hostname specifies the virtual hostname
+                                to match for protocol types that define this concept.
+                                When unspecified, all hostnames are matched. This
+                                field is ignored for protocols that don't require
+                                hostname based matching. \n Implementations MUST apply
+                                Hostname matching appropriately for each of the following
+                                protocols: \n * TLS: The Listener Hostname MUST match
+                                the SNI. * HTTP: The Listener Hostname MUST match
+                                the Host header of the request. * HTTPS: The Listener
+                                Hostname SHOULD match at both the TLS and HTTP protocol
+                                layers as described above. If an implementation does
+                                not ensure that both the SNI and Host header match
+                                the Listener hostname, it MUST clearly document that.
+                                \n For HTTPRoute and TLSRoute resources, there is
+                                an interaction with the `spec.hostnames` array. When
+                                both listener and route specify hostnames, there MUST
+                                be an intersection between the values for a Route
+                                to be accepted. For more information, refer to the
+                                Route specific Hostnames documentation. \n Hostnames
+                                that are prefixed with a wildcard label (`*.`) are
+                                interpreted as a suffix match. That means that a match
+                                for `*.example.com` would match both `test.example.com`,
+                                and `foo.test.example.com`, but not `example.com`.
+                                \n Support: Core"
+                              maxLength: 253
+                              minLength: 1
+                              pattern: ^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            name:
+                              description: "Name is the name of the Listener. This
+                                name MUST be unique within a Gateway. \n Support:
+                                Core"
+                              maxLength: 253
+                              minLength: 1
+                              pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                              type: string
+                            port:
+                              description: "Port is the network port. Multiple listeners
+                                may use the same port, subject to the Listener compatibility
+                                rules. \n Support: Core"
+                              format: int32
+                              maximum: 65535
+                              minimum: 1
+                              type: integer
+                            protocol:
+                              description: "Protocol specifies the network protocol
+                                this listener expects to receive. \n Support: Core"
+                              maxLength: 255
+                              minLength: 1
+                              pattern: ^[a-zA-Z0-9]([-a-zSA-Z0-9]*[a-zA-Z0-9])?$|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/[A-Za-z0-9]+$
+                              type: string
+                            tls:
+                              description: "TLS is the TLS configuration for the Listener.
+                                This field is required if the Protocol field is \"HTTPS\"
+                                or \"TLS\". It is invalid to set this field if the
+                                Protocol field is \"HTTP\", \"TCP\", or \"UDP\". \n
+                                The association of SNIs to Certificate defined in
+                                GatewayTLSConfig is defined based on the Hostname
+                                field for this listener. \n The GatewayClass MUST
+                                use the longest matching SNI out of all available
+                                certificates for any TLS handshake. \n Support: Core"
+                              properties:
+                                certificateRefs:
+                                  description: "CertificateRefs contains a series
+                                    of references to Kubernetes objects that contains
+                                    TLS certificates and private keys. These certificates
+                                    are used to establish a TLS handshake for requests
+                                    that match the hostname of the associated listener.
+                                    \n A single CertificateRef to a Kubernetes Secret
+                                    has \"Core\" support. Implementations MAY choose
+                                    to support attaching multiple certificates to
+                                    a Listener, but this behavior is implementation-specific.
+                                    \n References to a resource in different namespace
+                                    are invalid UNLESS there is a ReferenceGrant in
+                                    the target namespace that allows the certificate
+                                    to be attached. If a ReferenceGrant does not allow
+                                    this reference, the \"ResolvedRefs\" condition
+                                    MUST be set to False for this listener with the
+                                    \"RefNotPermitted\" reason. \n This field is required
+                                    to have at least one element when the mode is
+                                    set to \"Terminate\" (default) and is optional
+                                    otherwise. \n CertificateRefs can reference to
+                                    standard Kubernetes resources, i.e. Secret, or
+                                    implementation-specific custom resources. \n Support:
+                                    Core - A single reference to a Kubernetes Secret
+                                    of type kubernetes.io/tls \n Support: Implementation-specific
+                                    (More than one reference or other resource types)"
+                                  items:
+                                    description: "SecretObjectReference identifies
+                                      an API object including its namespace, defaulting
+                                      to Secret. \n The API object must be valid in
+                                      the cluster; the Group and Kind must be registered
+                                      in the cluster for this reference to be valid.
+                                      \n References to objects with invalid Group
+                                      and Kind are not valid, and must be rejected
+                                      by the implementation, with appropriate Conditions
+                                      set on the containing object."
+                                    properties:
+                                      group:
+                                        default: ""
+                                        description: Group is the group of the referent.
+                                          For example, "gateway.networking.k8s.io".
+                                          When unspecified or empty string, core API
+                                          group is inferred.
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Secret
+                                        description: Kind is kind of the referent.
+                                          For example "Secret".
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: Name is the name of the referent.
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: "Namespace is the namespace of
+                                          the referenced object. When unspecified,
+                                          the local namespace is inferred. \n Note
+                                          that when a namespace different than the
+                                          local namespace is specified, a ReferenceGrant
+                                          object is required in the referent namespace
+                                          to allow that namespace's owner to accept
+                                          the reference. See the ReferenceGrant documentation
+                                          for details. \n Support: Core"
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 64
+                                  type: array
+                                mode:
+                                  default: Terminate
+                                  description: "Mode defines the TLS behavior for
+                                    the TLS session initiated by the client. There
+                                    are two possible modes: \n - Terminate: The TLS
+                                    session between the downstream client and the
+                                    Gateway is terminated at the Gateway. This mode
+                                    requires certificateRefs to be set and contain
+                                    at least one element. - Passthrough: The TLS session
+                                    is NOT terminated by the Gateway. This implies
+                                    that the Gateway can't decipher the TLS stream
+                                    except for the ClientHello message of the TLS
+                                    protocol. CertificateRefs field is ignored in
+                                    this mode. \n Support: Core"
+                                  enum:
+                                  - Terminate
+                                  - Passthrough
+                                  type: string
+                                options:
+                                  additionalProperties:
+                                    description: AnnotationValue is the value of an
+                                      annotation in Gateway API. This is used for
+                                      validation of maps such as TLS options. This
+                                      roughly matches Kubernetes annotation validation,
+                                      although the length validation in that case
+                                      is based on the entire size of the annotations
+                                      struct.
+                                    maxLength: 4096
+                                    minLength: 0
+                                    type: string
+                                  description: "Options are a list of key/value pairs
+                                    to enable extended TLS configuration for each
+                                    implementation. For example, configuring the minimum
+                                    TLS version or supported cipher suites. \n A set
+                                    of common keys MAY be defined by the API in the
+                                    future. To avoid any ambiguity, implementation-specific
+                                    definitions MUST use domain-prefixed names, such
+                                    as `example.com/my-custom-option`. Un-prefixed
+                                    names are reserved for key names defined by Gateway
+                                    API. \n Support: Implementation-specific"
+                                  maxProperties: 16
+                                  type: object
+                              type: object
+                              x-kubernetes-validations:
+                              - message: certificateRefs must be specified when TLSModeType
+                                  is Terminate
+                                rule: 'self.mode == ''Terminate'' ? size(self.certificateRefs)
+                                  > 0 : true'
+                          required:
+                          - name
+                          - port
+                          - protocol
+                          type: object
+                        type: array
+                    required:
+                    - gatewayConfig
+                    - gatewayListeners
                     type: object
                 required:
                 - liveKit
