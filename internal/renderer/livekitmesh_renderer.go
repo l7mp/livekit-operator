@@ -58,6 +58,13 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 	}
 }
 
+func (r *Renderer) renderStunnerComponentResources(renderContext *RenderContext) {
+	r.renderStunnerGatewayClass(renderContext)
+	r.renderStunnerGatewayConfig(renderContext)
+	r.renderStunnerGateway(renderContext)
+	r.renderStunnerUdpRoute(renderContext)
+}
+
 func (r *Renderer) renderLiveKitComponentResources(renderContext *RenderContext) {
 	r.renderLiveKitConfigMap(renderContext)
 	r.renderLiveKitDeployment(renderContext)
