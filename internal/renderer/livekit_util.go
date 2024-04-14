@@ -83,7 +83,7 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
+			Type: corev1.ServiceTypeLoadBalancer,
 			Selector: map[string]string{
 				"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 				"app.kubernetes.io/instance": "livekit",

@@ -103,6 +103,7 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	//find configMap resources in the cluster
 	configMaps := &corev1.ConfigMapList{}
 	listOps := &client.ListOptions{
+		//TODO fetch configmaps from the previously acquired livekitmeshes' namespaces
 		LabelSelector: labels.SelectorFromSet(
 			map[string]string{
 				opdefault.DefaultLabelKeyForConfigMap: opdefault.DefaultLabelValueForConfigMap,
@@ -115,9 +116,7 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		for _, cfgmp := range configMaps.Items {
 			cfgmp := cfgmp
 			//TODO if this controller handles it (in case if multiple operators and controllers are running
-			if shouldEnqueueConfigMap(&cfgmp) {
-				configMapList = append(configMapList, &cfgmp)
-			}
+			configMapList = append(configMapList, &cfgmp)
 		}
 	}
 
@@ -388,14 +387,4 @@ func (r *LiveKitMeshReconciler) deploymentMeshIndexFunc(object client.Object) []
 		r.Log.Info("deployments when indexing", "dps", dps)
 	}
 	return dps
-}
-
-// Add your custom filtering logic here
-func shouldEnqueueConfigMap(configMap *corev1.ConfigMap) bool {
-	// For example, you can check some condition on the ConfigMap
-	// and decide whether to enqueue it or not.
-	// Return true to enqueue, false to skip.
-	// Modify this logic according to your requirements.
-	//fmt.Println("shouldEnqueueConfigMap", "configmap", configMap.Name, "bool", configMap.Labels[opdefault.DefaultLabelKeyForConfigMap] == opdefault.DefaultLabelValueForConfigMap)
-	return configMap.Labels[opdefault.DefaultLabelKeyForConfigMap] == opdefault.DefaultLabelValueForConfigMap
 }

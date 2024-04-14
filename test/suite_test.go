@@ -312,7 +312,7 @@ var _ = Describe("Integration test:", func() {
 						Name:      "cloudflare-api-token-secret",
 					}
 
-					secret := &corev1.Secret{}
+					secret := &corev1.Secrets{}
 					Eventually(func() error {
 						err := k8sClient.Get(ctx, lookUpKey, secret)
 						if err != nil {
