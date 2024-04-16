@@ -21,8 +21,10 @@ import (
 	"fmt"
 	renderer "github.com/l7mp/livekit-operator/internal/renderer"
 	"github.com/l7mp/livekit-operator/internal/updater"
+	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"time"
 
 	"go.uber.org/zap/zapcore"
@@ -56,6 +58,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(livekitstunnerl7mpiov1alpha1.AddToScheme(scheme))
+	utilruntime.Must(gwapiv1.AddToScheme(scheme))
+	utilruntime.Must(stnrgwv1.AddToScheme(scheme))
 	utilruntime.Must(cert.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
