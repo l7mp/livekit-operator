@@ -5,12 +5,14 @@ import (
 	cert "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -264,6 +266,143 @@ func (u *Updater) upsertStatefulSet(ss *v1.StatefulSet, gen int) (ctrlutil.Opera
 	}
 
 	u.log.V(1).Info("statefulset upserted", "resource", store.GetObjectKey(ss), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertGatewayClass(gwClass *gwapiv1.GatewayClass, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert gatewayclass", "resource", store.GetObjectKey(gwClass), "generation", gen)
+
+	current := &gwapiv1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: gwClass.GetName(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, gwClass)
+		if err != nil {
+			return err
+		}
+
+		gwClassSpec := &gwClass.Spec
+		gwClassSpec.DeepCopyInto(&current.Spec)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert gatewayclass %q: %w",
+			store.GetObjectKey(gwClass), err)
+	}
+
+	u.log.V(1).Info("gatewayclass upserted", "resource", store.GetObjectKey(gwClass), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertGatewayConfigs(gwConfig *stnrgwv1.GatewayConfig, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert gatewayconfig", "resource", store.GetObjectKey(gwConfig), "generation", gen)
+
+	current := &stnrgwv1.GatewayConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gwConfig.GetName(),
+			Namespace: gwConfig.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, gwConfig)
+		if err != nil {
+			return err
+		}
+
+		gwConfigSpec := &gwConfig.Spec
+		gwConfigSpec.DeepCopyInto(&current.Spec)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert gatewayconfig %q: %w",
+			store.GetObjectKey(gwConfig), err)
+	}
+
+	u.log.V(1).Info("gatewayconfig upserted", "resource", store.GetObjectKey(gwConfig), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertGateway(gw *gwapiv1.Gateway, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert gateway", "resource", store.GetObjectKey(gw), "generation", gen)
+
+	current := &gwapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gw.GetName(),
+			Namespace: gw.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, gw)
+		if err != nil {
+			return err
+		}
+
+		gwConfigSpec := &gw.Spec
+		currentSpec := &current.Spec
+		currentSpec.GatewayClassName = gwConfigSpec.GatewayClassName
+		currentSpec.Listeners = make([]gwapiv1.Listener, len(gwConfigSpec.Listeners))
+		for i, _ := range gwConfigSpec.Listeners {
+			currentSpec.Listeners[i] = gwConfigSpec.Listeners[i]
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert gateway %q: %w",
+			store.GetObjectKey(gw), err)
+	}
+
+	u.log.V(1).Info("gateway upserted", "resource", store.GetObjectKey(gw), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertUDPRoute(udpr *stnrgwv1.UDPRoute, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert udproute", "resource", store.GetObjectKey(udpr), "generation", gen)
+
+	current := &stnrgwv1.UDPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      udpr.GetName(),
+			Namespace: udpr.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, udpr)
+		if err != nil {
+			return err
+		}
+
+		udprSpec := &udpr.Spec
+		currentSpec := &current.Spec
+		udprSpec.DeepCopyInto(currentSpec)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert udproute %q: %w",
+			store.GetObjectKey(udpr), err)
+	}
+
+	u.log.V(1).Info("udproute upserted", "resource", store.GetObjectKey(udpr), "generation",
 		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
 
 	return op, nil

@@ -103,5 +103,29 @@ func (u *Updater) processUpdate(e *event.Update) error {
 			u.log.Error(err, "cannot update statefulset", "operation", op)
 		}
 	}
+
+	for _, gwc := range uq.GatewayClasses.GetAll() {
+		if op, err := u.upsertGatewayClass(gwc, gen); err != nil {
+			u.log.Error(err, "cannot update gatewayclass", "operation", op)
+		}
+	}
+
+	for _, gwc := range uq.GatewayConfigs.GetAll() {
+		if op, err := u.upsertGatewayConfigs(gwc, gen); err != nil {
+			u.log.Error(err, "cannot update gatewayconfigs", "operation", op)
+		}
+	}
+
+	for _, gw := range uq.Gateways.GetAll() {
+		if op, err := u.upsertGateway(gw, gen); err != nil {
+			u.log.Error(err, "cannot update gateway", "operation", op)
+		}
+	}
+
+	for _, udpr := range uq.UDPRoutes.GetAll() {
+		if op, err := u.upsertUDPRoute(udpr, gen); err != nil {
+			u.log.Error(err, "cannot update udproute", "operation", op)
+		}
+	}
 	return nil
 }
