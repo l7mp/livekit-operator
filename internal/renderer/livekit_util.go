@@ -1,29 +1,40 @@
 package renderer
 
 import (
+	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
+	"strconv"
 	"strings"
 )
 
-func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, address *string) (*corev1.ConfigMap, error) {
+func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc.IceConfig) (*corev1.ConfigMap, error) {
 	dp := lkMesh.Spec.Components.LiveKit.Deployment
 	name := ConfigMapNameFormat(*dp.Name)
 	config := dp.Config
-
-	if address != nil {
-		for _, ts := range config.Rtc.TurnServers {
-			if ts.AuthURI == nil {
-				ts.Host = address
-			}
+	//TODO fix the below code, first turn address is taken, others are left there
+	iceServers := *iceConfig.IceServers
+	iceAuthenticationToken := iceServers[0]
+	urls := *iceAuthenticationToken.Urls
+	username := *iceAuthenticationToken.Username
+	credential := *iceAuthenticationToken.Credential
+	for i, url := range urls {
+		host, port, err := getAddressAndPortFromTurnUrl(url)
+		if err != nil {
+			return nil, fmt.Errorf("this should only skip the current turn server TODO: %v", err)
 		}
+		config.Rtc.TurnServers[i].Username = &username
+		config.Rtc.TurnServers[i].Credential = &credential
+		config.Rtc.TurnServers[i].Host = host
+		config.Rtc.TurnServers[i].Port = port
 	}
 
 	yamlData, err := yaml.Marshal(&config)
@@ -48,6 +59,17 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, address *string) (*co
 	}
 
 	return cm, nil
+}
+
+func getAddressAndPortFromTurnUrl(url string) (*string, *int, error) {
+	splitString := strings.Split(url, ":")
+	address := splitString[1]
+	portString := strings.Split(splitString[2], "?")[0]
+	portInt, err := strconv.Atoi(portString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert port string to int: %v", err)
+	}
+	return &address, &portInt, nil
 }
 
 func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {

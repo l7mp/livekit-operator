@@ -29,7 +29,7 @@ func (r *Renderer) renderStunnerGatewayClass(renderContext *RenderContext) {
 	}
 
 	renderContext.update.UpsertQueue.GatewayClasses.Upsert(gatewayClass)
-	log.V(2).Info("Upserted STUNner GatewayClass into UpsertQueue", "cm", store.GetObjectKey(gatewayClass))
+	log.V(2).Info("Upserted STUNner GatewayClass into UpsertQueue", "gwclass", store.GetObjectKey(gatewayClass))
 }
 
 func (r *Renderer) renderStunnerGatewayConfig(renderContext *RenderContext) {
@@ -47,7 +47,7 @@ func (r *Renderer) renderStunnerGatewayConfig(renderContext *RenderContext) {
 	}
 
 	renderContext.update.UpsertQueue.GatewayConfigs.Upsert(gatewayConfig)
-	log.V(2).Info("Upserted STUNner GatewayConfig into UpsertQueue", "cm", store.GetObjectKey(gatewayConfig))
+	log.V(2).Info("Upserted STUNner GatewayConfig into UpsertQueue", "gwconfig", store.GetObjectKey(gatewayConfig))
 }
 
 func (r *Renderer) renderStunnerGateway(renderContext *RenderContext) {
@@ -65,7 +65,7 @@ func (r *Renderer) renderStunnerGateway(renderContext *RenderContext) {
 	}
 
 	renderContext.update.UpsertQueue.Gateways.Upsert(gateway)
-	log.V(2).Info("Upserted STUNner Gateway into UpsertQueue", "cm", store.GetObjectKey(gateway))
+	log.V(2).Info("Upserted STUNner Gateway into UpsertQueue", "gw", store.GetObjectKey(gateway))
 }
 
 func (r *Renderer) renderStunnerUdpRoute(renderContext *RenderContext) {
@@ -83,7 +83,7 @@ func (r *Renderer) renderStunnerUdpRoute(renderContext *RenderContext) {
 	}
 
 	renderContext.update.UpsertQueue.UDPRoutes.Upsert(udpRoute)
-	log.V(2).Info("Upserted STUNner UDPRoute into UpsertQueue", "cm", store.GetObjectKey(udpRoute))
+	log.V(2).Info("Upserted STUNner UDPRoute into UpsertQueue", "udproute", store.GetObjectKey(udpRoute))
 }
 
 func createStunnerGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {

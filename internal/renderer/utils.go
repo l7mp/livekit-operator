@@ -5,6 +5,9 @@ import (
 	"github.com/go-logr/logr"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/store"
+	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
+	"net"
+	"strings"
 )
 
 func (r *Renderer) getLoadBalancerIP(logger logr.Logger, gw *lkstnv1a1.Gateway) *string {
@@ -78,4 +81,16 @@ func GetStunnerGatewayClassName(lkMeshName string) string {
 
 func GetStunnerUDPRouteName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-udproute")
+}
+
+func validateIPAddress(ip string) bool {
+	return net.ParseIP(ip) != nil
+}
+
+func getAddressFromIceConfig(iceConfig *stnrauthsvc.IceConfig) string {
+	iceServers := *iceConfig.IceServers
+	urls := *iceServers[0].Urls
+	turnUrl := urls[0]
+	address := strings.Split(turnUrl, ":")[1]
+	return address
 }

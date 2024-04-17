@@ -16,9 +16,8 @@ type RenderContext struct {
 	//certManager *lkstnv1a1.CertManager
 	//monitoring  *lkstnv1a1.Monitoring
 	//gateway     *lkstnv1a1.Gateway
-	liveKitMesh             *lkstnv1a1.LiveKitMesh
-	turnServerPublicAddress *string
-	log                     logr.Logger
+	liveKitMesh *lkstnv1a1.LiveKitMesh
+	log         logr.Logger
 }
 
 func NewRenderContext(e *event.Render, r *Renderer, lkMesh *lkstnv1a1.LiveKitMesh) *RenderContext {
@@ -31,8 +30,7 @@ func NewRenderContext(e *event.Render, r *Renderer, lkMesh *lkstnv1a1.LiveKitMes
 		//certManager: lkMesh.Spec.Components.CertManager,
 		//monitoring:  lkMesh.Spec.Components.Monitoring,
 		//gateway:     lkMesh.Spec.Components.Gateway,
-		liveKitMesh:             lkMesh,
-		turnServerPublicAddress: nil,
-		log:                     r.log.WithValues("LiveKitMesh", lkMesh.GetName()),
+		liveKitMesh: lkMesh,
+		log:         r.log.WithValues("LiveKitMesh", lkMesh.GetName()),
 	}
 }

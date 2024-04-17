@@ -3,6 +3,7 @@ package external
 import (
 	"context"
 	"github.com/go-logr/logr"
+	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	helmClient "github.com/mittwald/go-helm-client"
 	"time"
 )
@@ -24,7 +25,7 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 	log := logger.WithName("Envoy-GW")
 
 	opt := &helmClient.Options{
-		Namespace:        EnvoyGatewayChartNamespace, // Change this to the namespace you wish the client to operate in.
+		Namespace:        opdefault.EnvoyGatewayChartNamespace, // Change this to the namespace you wish the client to operate in.
 		RepositoryCache:  "/tmp/.helmcache",
 		RepositoryConfig: "/tmp/.helmrepo",
 		Debug:            true,
@@ -46,7 +47,7 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 		Version:         "v0.5.0",
 		ChartName:       "oci://docker.io/envoyproxy/gateway-helm",
 		CreateNamespace: true,
-		Namespace:       EnvoyGatewayChartNamespace,
+		Namespace:       opdefault.EnvoyGatewayChartNamespace,
 		UpgradeCRDs:     true,
 		SkipCRDs:        true,
 		Wait:            true,

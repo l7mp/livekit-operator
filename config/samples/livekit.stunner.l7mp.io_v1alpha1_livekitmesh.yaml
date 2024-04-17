@@ -13,7 +13,7 @@ spec:
   components:
     liveKit:
       deployment:
-        replicas: 2 #opt
+        replicas: 1 #opt
         config:
           keys:
             access_token: secretsecretsecretsecretsecretsecret
@@ -26,7 +26,7 @@ spec:
             port_range_start: 50000
             tcp_port: 7801
             turn_servers:
-              - uri: http://stunner-auth.stunner-gateway-system.svc:8088?service=turn
+              - host: ""
             use_external_ip: false
 #        configMap:
 #          namespace: default
@@ -53,10 +53,10 @@ spec:
         challengeSolver: cloudflare
         dnsZone: example.com
         email: dummy@dummy.com
-    gateway:
-      relatedStunnerGatewayAnnotations:
-        name: udp-gateway
-        namespace: stunner-gateway-system
+#    gateway:
+#      relatedStunnerGatewayAnnotations:
+#        name: udp-gateway
+#        namespace: stunner-gateway-system
     stunner:
       gatewayConfig:
         realm: stunner.l7mp.io

@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"fmt"
 	"github.com/l7mp/livekit-operator/internal/store"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -12,7 +13,25 @@ func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
 
 	lkMesh := context.liveKitMesh
 
-	cm, err := createLiveKitConfigMap(lkMesh, context.turnServerPublicAddress)
+	iceConfig, err := getIceConfigurationFromStunnerAuth(*lkMesh, log)
+	if err != nil {
+		log.Error(err, "Failed to get ICE configuration from STUNner auth")
+		return
+	} else if iceConfig != nil {
+		address := getAddressFromIceConfig(iceConfig)
+		if validateIPAddress(address) {
+			log.V(1).Info("Valid IP address found for STUNner", "address", address)
+		} else {
+			err := fmt.Errorf("invalid turn address found: %s", address)
+			log.Error(err, "Failed to render LiveKit-Server ConfigMap")
+			return
+		}
+	} else {
+		//iceConfig is nil
+		return
+	}
+
+	cm, err := createLiveKitConfigMap(lkMesh, *iceConfig)
 	if err != nil {
 		log.Error(err, "cannot create livekit config map")
 		return
