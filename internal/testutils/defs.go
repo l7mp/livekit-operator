@@ -1,11 +1,15 @@
 package testutils
 
 import (
+	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
+	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 var (
@@ -29,22 +33,31 @@ var (
 		Limits:   TestResourceLimit,
 		Requests: TestResourceRequest,
 	}
-	TestTerminationGracePeriodSeconds = int64(3600)
-	TestGatewayNamespacedName         = "testgateway"
-	TestConfigCredential              = "testcredential"
-	TestAuthUri                       = "http://localhost:8080?service=turn"
-	TestAccessToken                   = "testtoken"
-	TestLogLevel                      = "info"
-	TestPort                          = 1234
-	TestRedisAddress                  = "dummy_address"
-	TestPortRangeStart                = 11111
-	TestPortRangeEnd                  = 22222
-	TestTCPPort                       = 1235
-	TestUseExternalIP                 = false
-	TestIssuerEmail                   = "dummy@dummy.test"
-	TestIssuerChallengeSolver         = opdefault.IssuerCloudFlare
-	TestIssuerDnsZone                 = "test.com"
-	TestApiToken                      = "test-api-token"
+	TestTerminationGracePeriodSeconds  = int64(3600)
+	TestGatewayNamespacedName          = "testgateway"
+	TestConfigCredential               = "testcredential"
+	TestAuthUri                        = "http://localhost:8080?service=turn"
+	TestAccessToken                    = "testtoken"
+	TestLogLevel                       = "info"
+	TestPort                           = 1234
+	TestRedisAddress                   = "dummy_address"
+	TestPortRangeStart                 = 11111
+	TestPortRangeEnd                   = 22222
+	TestTCPPort                        = 1235
+	TestUseExternalIP                  = false
+	TestIssuerEmail                    = "dummy@dummy.test"
+	TestIssuerChallengeSolver          = opdefault.IssuerCloudFlare
+	TestIssuerDnsZone                  = "test.com"
+	TestApiToken                       = "test-api-token"
+	TestStunnerGatewayConfigUsername   = "testuser"
+	TestStunnerGatewayConfigPassword   = "testpass"
+	TestStunnerGatewayConfigRealm      = "test.l7mp.io"
+	TestStunnerGatewayConfigAuthType   = "static"
+	TestStunnerGatewayListenerName     = "test-listener"
+	TestStunnerGatewayListenerPort     = 3478
+	TestStunnerGatewayListenerProtocol = "UDP"
+	TestTurnUrl                        = "turn://1.2.3.4:3478"
+	TestTransportPolicy                = stnrauthsvc.IceTransportPolicy("all")
 )
 
 // TestNs is a Namespace for testing purposes
@@ -128,6 +141,23 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 					ApiToken:        &TestApiToken,
 				},
 			},
+			Stunner: &lkstnv1a1.Stunner{
+				GatewayConfig: &stnrgwv1.GatewayConfigSpec{
+					Realm:    &TestStunnerGatewayConfigRealm,
+					Username: &TestStunnerGatewayConfigUsername,
+					Password: &TestStunnerGatewayConfigPassword,
+					AuthType: &TestStunnerGatewayConfigAuthType,
+				},
+				GatewayListeners: []gwapiv1.Listener{{
+					Name: gwapiv1.SectionName(TestStunnerGatewayListenerName),
+					//Hostname:      nil,
+					Port:     gwapiv1.PortNumber(TestStunnerGatewayListenerPort),
+					Protocol: gwapiv1.ProtocolType(TestStunnerGatewayListenerProtocol),
+					//TLS:           nil,
+					//AllowedRoutes: nil,
+				},
+				},
+			},
 			Ingress: nil,
 			//Gateway: &lkstnv1a1.Gateway{
 			//	RelatedStunnerGatewayAnnotations: &lkstnv1a1.NamespacedName{
@@ -141,6 +171,35 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 		},
 	},
 	Status: lkstnv1a1.LiveKitMeshStatus{},
+}
+
+var TestGatewayConfig = stnrgwv1.GatewayConfig{
+	TypeMeta: metav1.TypeMeta{
+		APIVersion: stnrgwv1.GroupVersion.String(),
+		Kind:       "GatewayConfig",
+	},
+	ObjectMeta: metav1.ObjectMeta{
+		Name:      fmt.Sprintf("%s-%s", TestLkMesh.Name, "stunner-gatewayconfig"),
+		Namespace: TestNsName,
+	},
+	Spec: stnrgwv1.GatewayConfigSpec{
+		Realm:    &TestStunnerGatewayConfigRealm,
+		AuthType: &TestStunnerGatewayConfigAuthType,
+		Username: &TestStunnerGatewayConfigUsername,
+		Password: &TestStunnerGatewayConfigPassword,
+	},
+}
+
+var TestTurnIceConfig = stnrauthsvc.IceConfig{
+	IceServers: &[]stnrauthsvc.IceAuthenticationToken{{
+		Credential: &TestStunnerGatewayConfigPassword,
+		Urls: &[]string{
+			TestTurnUrl,
+		},
+		Username: &TestStunnerGatewayConfigUsername,
+	},
+	},
+	IceTransportPolicy: &TestTransportPolicy,
 }
 
 /*// TestService is representing the service created by stunner

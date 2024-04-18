@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/l7mp/livekit-operator/api/v1alpha1"
+	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
 	"io"
+	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"strings"
 	"time"
@@ -27,17 +29,13 @@ var (
 
 func getIceConfigurationFromStunnerAuth(lkMesh v1alpha1.LiveKitMesh, log logr.Logger) (*stnrauthsvc.IceConfig, error) {
 	log.WithName("getIceConfigurationFromStunnerAuth")
-	gwConfig := lkMesh.Spec.Components.Stunner.GatewayConfig
-	ttl := int32(3600)
-	if *gwConfig.AuthType == "longterm" && gwConfig.AuthLifetime != nil {
-		ttl = *lkMesh.Spec.Components.Stunner.GatewayConfig.AuthLifetime
-	}
-	userName := gwConfig.Username
-	gatewayNamespace := lkMesh.Namespace
-	gatewayName := GetStunnerGatewayName(lkMesh.Name)
 
-	parameterList := fmt.Sprintf("&ttl=%d&username=%s&namespace=%s&gateway=%s", ttl, *userName, gatewayNamespace, gatewayName)
-	url := fmt.Sprintf("%s%s", baseUrlWithLbStunner, parameterList)
+	parameterList, logMsg := createParameterList(lkMesh)
+	if logMsg != nil && parameterList == nil {
+		log.V(2).Info("Could not create parameter list", "reason", logMsg)
+		return nil, nil
+	}
+	url := fmt.Sprintf("%s%s", baseUrlWithLbStunner, *parameterList)
 
 	var iceConfig stnrauthsvc.IceConfig
 	var resp *http.Response
@@ -53,16 +51,19 @@ func getIceConfigurationFromStunnerAuth(lkMesh v1alpha1.LiveKitMesh, log logr.Lo
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Error(err, "Error reading response body")
+			log.Error(err, "error reading response body")
 			return nil, err
 		}
 
 		log.V(2).Info("response body", "body", string(body), "status", resp.StatusCode)
 		if resp.StatusCode == http.StatusOK {
 			if err := json.Unmarshal(body, &iceConfig); err != nil {
-				log.Error(err, "Unmarshal response failed")
+				log.Error(err, "unmarshal response failed")
 				return nil, err
+			} else if iceConfig == (stnrauthsvc.IceConfig{}) {
+				return nil, fmt.Errorf("response was not an ice config")
 			}
+			log.Info("response body", "body", string(body), "status", resp.StatusCode, "iceConfig", iceConfig)
 			iceServers := *iceConfig.IceServers
 			urls := *iceServers[0].Urls
 			turnUrl := urls[0]
@@ -92,4 +93,28 @@ func sendRequest(url string) (*http.Response, error) {
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	return client.Do(req)
+}
+
+func createParameterList(lkMesh v1alpha1.LiveKitMesh) (*string, *string) {
+	parameterList := ""
+	gwConfig := store.GatewayConfigs.GetObject(types.NamespacedName{
+		Namespace: lkMesh.Namespace,
+		Name:      GetStunnerGatewayConfigName(lkMesh.Name),
+	})
+	if gwConfig == nil {
+		log := fmt.Sprintf("GatewayConfig not found in the global store, probably not ready yet")
+		return nil, &log
+	}
+	gwConfigSpec := gwConfig.Spec
+	if *gwConfigSpec.AuthType == "longterm" && gwConfigSpec.AuthLifetime != nil {
+		parameterList = fmt.Sprintf("%s&ttl=%d", parameterList, *gwConfigSpec.AuthLifetime)
+	}
+	if gwConfigSpec.Username != nil {
+		parameterList = fmt.Sprintf("%s&username=%s", parameterList, *gwConfigSpec.Username)
+	}
+	gatewayNamespace := lkMesh.Namespace
+	gatewayName := GetStunnerGatewayName(lkMesh.Name)
+
+	parameterList = fmt.Sprintf("%s&namespace=%s&gateway=%s", parameterList, gatewayNamespace, gatewayName)
+	return &parameterList, nil
 }
