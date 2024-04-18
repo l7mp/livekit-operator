@@ -132,6 +132,8 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 		opdefault.RelatedComponent:      opdefault.ComponentStunner,
 	}
 
+	lkGwConfig := *lkMesh.Spec.Components.Stunner.GatewayConfig
+
 	if current := store.GatewayClasses.GetObject(types.NamespacedName{
 		Namespace: lkMesh.Namespace,
 		Name:      name,
@@ -139,7 +141,7 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 		labels = mergeMaps(labels, current.Labels)
 	}
 
-	return &stnrgwv1.GatewayConfig{
+	gwConfig := &stnrgwv1.GatewayConfig{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: lkMesh.Namespace,
@@ -151,8 +153,22 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 				}.String(),
 			},
 		},
-		Spec: *lkMesh.Spec.Components.Stunner.GatewayConfig,
+		Spec: stnrgwv1.GatewayConfigSpec{},
 	}
+
+	gwConfigSpec := gwConfig.Spec
+	lkGwConfig.DeepCopyInto(&gwConfigSpec)
+
+	if *gwConfigSpec.AuthType == "plaintext" || *gwConfigSpec.AuthType == "static" {
+		if gwConfigSpec.Username == nil {
+			*gwConfigSpec.Username = "username"
+		}
+		if gwConfigSpec.Password == nil {
+			*gwConfigSpec.Password = "password"
+		}
+	}
+
+	return gwConfig
 }
 
 func createStunnerGatewayClass(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.GatewayClass {
