@@ -49,10 +49,10 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 			Name:      name,
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:               opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey:         lkMesh.GetName(),
-				opdefault.DefaultLabelValueForConfigMap: opdefault.DefaultLabelValueForConfigMap,
-				opdefault.RelatedComponent:              opdefault.ComponentLiveKit,
+				opdefault.OwnedByLabelKey:             opdefault.OwnedByLabelValue,
+				opdefault.RelatedLiveKitMeshKey:       lkMesh.GetName(),
+				opdefault.DefaultLabelKeyForConfigMap: opdefault.DefaultLabelValueForConfigMap,
+				opdefault.RelatedComponent:            opdefault.ComponentLiveKit,
 			},
 		},
 		Data: yamlMap,
@@ -139,13 +139,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 		env := env
 		envList = append(envList, env)
 	}
-	/*
-	   - name: LIVEKIT_CONFIG
-	     valueFrom:
-	       configMapKeyRef:
-	         name: livekit-server
-	         key: config.yaml
-	*/
+
 	envList = append(envList, corev1.EnvVar{
 		Name: "LIVEKIT_CONFIG",
 		ValueFrom: &corev1.EnvVarSource{
@@ -175,6 +169,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
+				opdefault.RelatedConfigMapKey: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 			},
 		},
 		Spec: v1.DeploymentSpec{
@@ -191,7 +186,9 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 						"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 						"app.kubernetes.io/instance": "livekit",
 					},
-					//TODO	Annotations:                nil,
+					Annotations: map[string]string{
+						opdefault.DefaultConfigMapResourceVersionKey: "",
+					},
 					//TODO	Finalizers:                 nil,
 				},
 				Spec: corev1.PodSpec{

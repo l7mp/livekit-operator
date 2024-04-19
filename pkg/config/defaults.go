@@ -40,6 +40,13 @@ const (
 
 	// DefaultClusterIssuerSecretApiTokenKey is the default api token key in the cluster issuer's secret
 	DefaultClusterIssuerSecretApiTokenKey = "api-token"
+
+	// DefaultConfigMapResourceVersionKey is the key of the pod template annotation that will trigger the rollout restart
+	// on the LiveKit pods whenever their corresponding config maps has changed
+	DefaultConfigMapResourceVersionKey = "livekit.l7mp.io/config-map-resource-version"
+
+	// RelatedConfigMapKey is the key of the annotation for the related config map for a LiveKit deployment
+	RelatedConfigMapKey = "livekit.l7mp.io/related-config-map"
 )
 
 // Statuses for the LiveKitMesh

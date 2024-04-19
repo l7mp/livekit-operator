@@ -156,8 +156,8 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 		Spec: stnrgwv1.GatewayConfigSpec{},
 	}
 
-	gwConfigSpec := gwConfig.Spec
-	lkGwConfig.DeepCopyInto(&gwConfigSpec)
+	gwConfigSpec := &gwConfig.Spec
+	lkGwConfig.DeepCopyInto(gwConfigSpec)
 
 	if *gwConfigSpec.AuthType == "plaintext" || *gwConfigSpec.AuthType == "static" {
 		if gwConfigSpec.Username == nil {

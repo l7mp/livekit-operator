@@ -22,7 +22,8 @@ import (
 	ievent "github.com/l7mp/livekit-operator/internal/event"
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
-	v1 "k8s.io/api/apps/v1"
+	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -35,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 )
@@ -43,6 +45,15 @@ const (
 	serviceLiveKitIndex    = "serviceLiveKitIndex"
 	configMapLiveKitIndex  = "configMapLiveKitIndex"
 	deploymentLiveKitIndex = "deploymentLiveKitIndex"
+)
+
+var (
+	ownedByListOps = &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
+			}),
+	}
 )
 
 // LiveKitMeshReconciler reconciles a LiveKitMesh object
@@ -86,6 +97,10 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var configMapList []client.Object
 	var serviceList []client.Object
 	var deploymentList []client.Object
+	var gatewayClassList []client.Object
+	var gatewayConfigList []client.Object
+	var gatewayList []client.Object
+	var udpRouteList []client.Object
 
 	//find liveKitMesh resources in the cluster
 	liveKitMeshes := &lkstnv1a1.LiveKitMeshList{}
@@ -122,19 +137,14 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	//find services resources in the cluster
 	services := &corev1.ServiceList{}
-	listOpsSvc1 := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(
-			map[string]string{
-				opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
-			}),
-	}
+	//TODO we do not care about svcs created by stunner anymore, however make sure before deleting the second listoption
 	listOpsSvc2 := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(
 			map[string]string{
 				"stunner.l7mp.io/owned-by": "stunner",
 			}),
 	}
-	if err := r.List(ctx, services, listOpsSvc1, listOpsSvc2); err != nil {
+	if err := r.List(ctx, services, ownedByListOps, listOpsSvc2); err != nil {
 		log.Error(err, "error obtaining Service objects")
 		return ctrl.Result{}, err
 	} else {
@@ -145,15 +155,10 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	//find services resources in the cluster
-	deployments := &v1.DeploymentList{}
-	listOpsDeployment := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(
-			map[string]string{
-				opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
-			}),
-	}
-	if err := r.List(ctx, deployments, listOpsDeployment); err != nil {
+	//find deployment resources in the cluster
+	deployments := &appsv1.DeploymentList{}
+
+	if err := r.List(ctx, deployments, ownedByListOps); err != nil {
 		log.Error(err, "error obtaining Deployment objects")
 		return ctrl.Result{}, err
 	} else {
@@ -161,6 +166,54 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			deployment := deployment
 			//TODO if this controller handles it (in case if multiple operators and controllers are running
 			deploymentList = append(deploymentList, &deployment)
+		}
+	}
+
+	//find gatewayclass resources in the cluster
+	gatewayClasses := &gwapiv1.GatewayClassList{}
+	if err := r.List(ctx, gatewayClasses, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining GatewayClass objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, gwc := range gatewayClasses.Items {
+			gwc := gwc
+			gatewayClassList = append(gatewayClassList, &gwc)
+		}
+	}
+
+	//find gateway resources in the cluster
+	gateways := &gwapiv1.GatewayList{}
+	if err := r.List(ctx, gateways, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining Gateway objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, gw := range gateways.Items {
+			gw := gw
+			gatewayList = append(gatewayList, &gw)
+		}
+	}
+
+	//find gateway config resources in the cluster
+	gatewayConfigs := &stnrgwv1.GatewayConfigList{}
+	if err := r.List(ctx, gatewayConfigs, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining GatewayConfig objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, gwc := range gatewayConfigs.Items {
+			gwc := gwc
+			gatewayConfigList = append(gatewayConfigList, &gwc)
+		}
+	}
+
+	//find udp route resources in the cluster
+	udpRoutes := &stnrgwv1.UDPRouteList{}
+	if err := r.List(ctx, udpRoutes, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining UdpRoute objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, udpr := range udpRoutes.Items {
+			udpr := udpr
+			udpRouteList = append(udpRouteList, &udpr)
 		}
 	}
 
@@ -175,6 +228,18 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	store.Deployments.Reset(deploymentList)
 	log.Info("reset Deployment store", "deployment", store.Deployments.String())
+
+	store.GatewayClasses.Reset(gatewayClassList)
+	log.Info("reset GatewayClass store", "gatewayclasses", store.GatewayClasses.String())
+
+	store.GatewayConfigs.Reset(gatewayConfigList)
+	log.Info("reset GatewayConfig store", "gatewayConfigs", store.GatewayConfigs.String())
+
+	store.UDPRoutes.Reset(udpRouteList)
+	log.Info("reset UDPRoute store", "udproutes", store.UDPRoutes.String())
+
+	store.Gateways.Reset(gatewayList)
+	log.Info("reset Gateway store", "gateways", store.Gateways.String())
 
 	r.eventCh <- ievent.NewEventRender()
 
@@ -236,15 +301,13 @@ func (r *LiveKitMeshReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	controller.
-		Watches(&corev1.Service{},
-			&handler.EnqueueRequestForObject{},
-			//builder.WithPredicates(predicate.Or(stunnerLoadBalancerPredicate, ownedByPredicate))).
-			builder.WithPredicates(ownedByPredicate)).
 		Watches(&corev1.ConfigMap{},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(ownedByPredicate)).
-		//builder.WithPredicates(predicate.NewPredicateFuncs(r.validateConfigMapForReconcile))).
-		Watches(&v1.Deployment{},
+		Watches(&corev1.Service{},
+			&handler.EnqueueRequestForObject{},
+			builder.WithPredicates(ownedByPredicate)).
+		Watches(&gwapiv1.Gateway{},
 			&handler.EnqueueRequestForObject{},
 			builder.WithPredicates(ownedByPredicate))
 
@@ -303,7 +366,7 @@ func (r *LiveKitMeshReconciler) validateServiceForReconcile(object client.Object
 func (r *LiveKitMeshReconciler) validateDeploymentForReconcile(object client.Object) bool {
 	key := ""
 
-	if dp, ok := object.(*v1.Deployment); ok {
+	if dp, ok := object.(*appsv1.Deployment); ok {
 		key = store.GetObjectKey(dp)
 	} else {
 		return false
@@ -365,7 +428,7 @@ func (r *LiveKitMeshReconciler) serviceMeshIndexFunc(object client.Object) []str
 
 func (r *LiveKitMeshReconciler) deploymentMeshIndexFunc(object client.Object) []string {
 	var dps []string
-	deployments := &v1.DeploymentList{}
+	deployments := &appsv1.DeploymentList{}
 	lkMesh := &lkstnv1a1.LiveKitMesh{}
 
 	lkMesh = object.(*lkstnv1a1.LiveKitMesh)

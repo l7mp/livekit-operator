@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -107,10 +108,20 @@ func (u *Updater) upsertDeployment(dp *appv1.Deployment, gen int) (ctrlutil.Oper
 			current.Spec.Replicas = dp.Spec.Replicas
 		}
 
-		dp.Spec.Template.ObjectMeta.DeepCopyInto(&current.Spec.Template.ObjectMeta)
-
 		currentSpec := &current.Spec.Template.Spec
 		dpSpec := &dp.Spec.Template.Spec
+
+		dp.Spec.Template.ObjectMeta.DeepCopyInto(&current.Spec.Template.ObjectMeta)
+
+		if current.Annotations[opdefault.RelatedConfigMapKey] != "" {
+			cm := store.ConfigMaps.Get(types.NamespacedName{
+				Namespace: current.Namespace,
+				Name:      current.Annotations[opdefault.RelatedConfigMapKey],
+			})
+			if cm != nil {
+				current.Spec.Template.Annotations[opdefault.DefaultConfigMapResourceVersionKey] = cm.GetResourceVersion()
+			}
+		}
 
 		currentSpec.Containers = make([]corev1.Container, len(dpSpec.Containers))
 		for i := range dpSpec.Containers {
