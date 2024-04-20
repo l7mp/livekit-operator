@@ -2,30 +2,27 @@ package renderer
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
-	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
-	"github.com/l7mp/livekit-operator/internal/store"
 	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
 	"net"
 	"strings"
 )
 
-func (r *Renderer) getLoadBalancerIP(logger logr.Logger, gw *lkstnv1a1.Gateway) *string {
-	log := logger.WithName("getLoadBalancerIP")
-
-	serviceList := store.Services.GetAll()
-	for _, svc := range serviceList {
-		if val, ok := svc.Annotations["stunner.l7mp.io/related-gateway-name"]; ok {
-			if val == fmt.Sprintf("%s/%s", *gw.RelatedStunnerGatewayAnnotations.Namespace, *gw.RelatedStunnerGatewayAnnotations.Name) {
-				if len(svc.Status.LoadBalancer.Ingress) > 0 {
-					log.Info("LoadBalancerIP", "ip", svc.Status.LoadBalancer.Ingress[0].IP)
-					return &svc.Status.LoadBalancer.Ingress[0].IP
-				}
-			}
-		}
-	}
-	return nil
-}
+//func (r *Renderer) getLoadBalancerIP(logger logr.Logger, gw *lkstnv1a1.Gateway) *string {
+//	log := logger.WithName("getLoadBalancerIP")
+//
+//	serviceList := store.Services.GetAll()
+//	for _, svc := range serviceList {
+//		if val, ok := svc.Annotations["stunner.l7mp.io/related-gateway-name"]; ok {
+//			if val == fmt.Sprintf("%s/%s", *gw.RelatedStunnerGatewayAnnotations.Namespace, *gw.RelatedStunnerGatewayAnnotations.Name) {
+//				if len(svc.Status.LoadBalancer.Ingress) > 0 {
+//					log.Info("LoadBalancerIP", "ip", svc.Status.LoadBalancer.Ingress[0].IP)
+//					return &svc.Status.LoadBalancer.Ingress[0].IP
+//				}
+//			}
+//		}
+//	}
+//	return nil
+//}
 
 func mergeMaps(maps ...map[string]string) map[string]string {
 	mergedMap := make(map[string]string)
@@ -67,22 +64,49 @@ func RedisNameFormat(lkMeshName string) string {
 //	return lkConfig, nil
 //}
 
-func GetStunnerGatewayName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-udp-gateway")
+// STUNner related utils
+func getStunnerGatewayName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-gateway")
 }
 
-func GetStunnerGatewayConfigName(lkMeshName string) string {
+func getStunnerGatewayConfigName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-gatewayconfig")
 }
 
-func GetStunnerGatewayClassName(lkMeshName string) string {
+func getStunnerGatewayClassName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-gatewayclass")
 }
 
-func GetStunnerUDPRouteName(lkMeshName string) string {
+func getStunnerUDPRouteName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "stunner-udproute")
 }
 
+// Envoy related utils
+func getEnvoyGatewayClassName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gatewayclass")
+}
+
+func getEnvoyGatewayName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway")
+}
+
+func getEnvoyGatewayListenerName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway-https")
+}
+
+func getEnvoyGatewayListenerSecretName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway-https-secret")
+}
+
+func getEnvoyHTTPRouteName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-httproute")
+}
+
+func getHostNameWithSubDomain(subDomain string, hostName string) string {
+	return fmt.Sprintf("%s.%s", subDomain, hostName)
+}
+
+// Network related utils
 func validateIPAddress(ip string) bool {
 	return net.ParseIP(ip) != nil
 }

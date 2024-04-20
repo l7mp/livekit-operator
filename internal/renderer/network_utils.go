@@ -99,7 +99,7 @@ func createParameterList(lkMesh v1alpha1.LiveKitMesh) (*string, *string) {
 	parameterList := ""
 	gwConfig := store.GatewayConfigs.GetObject(types.NamespacedName{
 		Namespace: lkMesh.Namespace,
-		Name:      GetStunnerGatewayConfigName(lkMesh.Name),
+		Name:      getStunnerGatewayConfigName(lkMesh.Name),
 	})
 	if gwConfig == nil {
 		log := fmt.Sprintf("GatewayConfig not found in the global store, probably not ready yet")
@@ -113,7 +113,7 @@ func createParameterList(lkMesh v1alpha1.LiveKitMesh) (*string, *string) {
 		parameterList = fmt.Sprintf("%s&username=%s", parameterList, *gwConfigSpec.Username)
 	}
 	gatewayNamespace := lkMesh.Namespace
-	gatewayName := GetStunnerGatewayName(lkMesh.Name)
+	gatewayName := getStunnerGatewayName(lkMesh.Name)
 
 	parameterList = fmt.Sprintf("%s&namespace=%s&gateway=%s", parameterList, gatewayNamespace, gatewayName)
 	return &parameterList, nil

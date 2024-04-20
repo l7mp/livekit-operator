@@ -37,78 +37,65 @@ spec:
             properties:
               components:
                 properties:
-                  certManager:
-                    description: CertManager will obtain certificates from a variety
-                      of Issuers, both popular public Issuers and private Issuers,
-                      and ensure the certificates are valid and up-to-date, and will
-                      attempt to renew certificates at a configured time before expiry.
+                  applicationExpose:
+                    description: ApplicationExpose is the component that contains
+                      all required subcomponents that are accountable for exposing
+                      the application to the internet on a secure, encrypted way.
+                      This includes the Cert-manager, Envoy GW, and ExternalDns.
                     properties:
-                      issuer:
-                        description: Issuer holds the necessary configuration about
-                          the used Issuer
+                      certManager:
+                        description: CertManager will obtain certificates from a variety
+                          of Issuers, both popular public Issuers and private Issuers,
+                          and ensure the certificates are valid and up-to-date, and
+                          will attempt to renew certificates at a configured time
+                          before expiry.
                         properties:
-                          apiToken:
-                            description: ApiToken is the API token for the CloudFlare
-                              account that owns the challenged DnsZone
-                            type: string
-                          challengeSolver:
-                            description: ChallengeSolver Used to configure a DNS01
-                              challenge provider to be used when solving DNS01 challenges.
-                            enum:
-                            - cloudflare
-                            - route53
-                            - clouddns
-                            - digitalocean
-                            - azuredns
-                            type: string
-                          dnsZone:
-                            description: DnsZone Certificate requests will be issues
-                              against this DnsZone. This ChallengeSolver will use
-                              this to solve the challenge.
-                            type: string
-                          email:
-                            description: Email is the email address to be associated
-                              with the ACME account. This field is optional, but it
-                              is strongly recommended to be set. It will be used to
-                              contact you in case of issues with your account or certificates,
-                              including expiry notification emails. This field may
-                              be updated after the account is initially registered.
-                            type: string
-                        required:
-                        - apiToken
-                        - challengeSolver
-                        - dnsZone
+                          issuer:
+                            description: Issuer holds the necessary configuration
+                              about the used Issuer
+                            properties:
+                              apiToken:
+                                description: ApiToken is the API token for the CloudFlare
+                                  account that owns the challenged DnsZone
+                                type: string
+                              challengeSolver:
+                                description: ChallengeSolver Used to configure a DNS01
+                                  challenge provider to be used when solving DNS01
+                                  challenges.
+                                enum:
+                                - cloudflare
+                                - route53
+                                - clouddns
+                                - digitalocean
+                                - azuredns
+                                type: string
+                              email:
+                                description: Email is the email address to be associated
+                                  with the ACME account. This field is optional, but
+                                  it is strongly recommended to be set. It will be
+                                  used to contact you in case of issues with your
+                                  account or certificates, including expiry notification
+                                  emails. This field may be updated after the account
+                                  is initially registered.
+                                type: string
+                            required:
+                            - apiToken
+                            - challengeSolver
+                            type: object
                         type: object
+                      hostName:
+                        description: HostName is the DNS host name that will be used
+                          by both cert-manager and Envoy GW. DnsZone Certificate requests
+                          will be issues against this HostName. This ChallengeSolver
+                          will use this to solve the challenge.
+                        type: string
+                    required:
+                    - hostName
                     type: object
                   egress:
                     description: LiveKit's Egress resource descriptor. Egress makes
                       it possible to stream a single user's or any number of users'
                       streams out of a room onto an RTMP port.
-                    type: object
-                  gateway:
-                    description: Gateway field should hold the configuration for ANY
-                      Gateway deployments in the cluster (STUNner and Envoy)
-                    properties:
-                      relatedStunnerGatewayAnnotations:
-                        description: RelatedStunnerGatewayAnnotations is the name
-                          of the related gateway name for STUNner When deploying the
-                          LiveKit server pod we need to know the external IP of the
-                          LB SVC that was created based on the very given GW The value
-                          of this filed will be present in the SVC's annotation list
-                        properties:
-                          name:
-                            description: Name is the name of the configMap resource
-                            type: string
-                          namespace:
-                            description: Namespace is the namespace of the configMap
-                              resource
-                            type: string
-                        required:
-                        - name
-                        - namespace
-                        type: object
-                    required:
-                    - relatedStunnerGatewayAnnotations
                     type: object
                   ingress:
                     description: LiveKit's Ingress resource descriptor. This resource
@@ -177,6 +164,7 @@ spec:
                                       type: object
                                     type: array
                                   use_external_ip:
+                                    default: false
                                     type: boolean
                                 type: object
                             type: object
@@ -1934,7 +1922,7 @@ spec:
                     properties:
                       gatewayConfig:
                         description: GatewayConfig is the configuration for the STUNner
-                          deployment's GatewayConfig object
+                          deployment's GatewayConfig.spec object
                         properties:
                           authLifetime:
                             description: AuthLifetime defines the lifetime of "longterm"
@@ -2395,6 +2383,7 @@ spec:
                     - gatewayListeners
                     type: object
                 required:
+                - applicationExpose
                 - liveKit
                 type: object
             required:

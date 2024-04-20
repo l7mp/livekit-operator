@@ -37,7 +37,7 @@ func TestNetworkUtils(t *testing.T) {
 				parameterList, log := createParameterList(*lkMesh)
 				r.log.WithName("test").Info("log", "log", log)
 				assert.Nil(t, log, "log should be nil")
-				assert.Equal(t, "&username=testuser&namespace=testnamespace&gateway=testlivekitmesh-stunner-udp-gateway", *parameterList, "parameter list")
+				assert.Equal(t, "&username=testuser&namespace=testnamespace&gateway=testlivekitmesh-stunner-gateway", *parameterList, "parameter list")
 			},
 		},
 	})

@@ -17,7 +17,7 @@ var baseSecret = corev1.Secret{
 		Labels: map[string]string{
 			opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
 			//opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-			opdefault.RelatedComponent: opdefault.ComponentCertManager,
+			opdefault.RelatedComponent: opdefault.ComponentApplicationExpose,
 		},
 	},
 	Data: map[string][]byte{},
@@ -31,7 +31,7 @@ var baseIssuer = cert.Issuer{
 		Labels: map[string]string{
 			opdefault.OwnedByLabelKey: opdefault.OwnedByLabelValue,
 			//opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-			opdefault.RelatedComponent: opdefault.ComponentCertManager,
+			opdefault.RelatedComponent: opdefault.ComponentApplicationExpose,
 		},
 	},
 	Spec: cert.IssuerSpec{IssuerConfig: cert.IssuerConfig{
@@ -54,11 +54,11 @@ var baseIssuer = cert.Issuer{
 }
 
 func createIssuer(lkMesh lkstnv1a1.LiveKitMesh) (*cert.Issuer, *corev1.Secret) {
-	certManager := lkMesh.Spec.Components.CertManager
-	switch *certManager.Issuer.ChallengeSolver {
+	appExpose := lkMesh.Spec.Components.ApplicationExpose
+	switch *appExpose.CertManager.Issuer.ChallengeSolver {
 	//TODO create func for each issuertype
 	case opdefault.IssuerCloudFlare:
-		return newCloudFlareIssuer(certManager, lkMesh.GetNamespace())
+		return newCloudFlareIssuer(appExpose, lkMesh.GetNamespace())
 	case opdefault.IssuerRoute53:
 		return nil, nil
 	case opdefault.IssuerAzureDNS:
@@ -72,12 +72,13 @@ func createIssuer(lkMesh lkstnv1a1.LiveKitMesh) (*cert.Issuer, *corev1.Secret) {
 	}
 }
 
-func newCloudFlareIssuer(certManager *lkstnv1a1.CertManager, namespace string) (*cert.Issuer, *corev1.Secret) {
+func newCloudFlareIssuer(appExpose *lkstnv1a1.ApplicationExpose, namespace string) (*cert.Issuer, *corev1.Secret) {
 	//setting Issuer
+	certManager := appExpose.CertManager
 	issuer := baseIssuer
 	issuer.Name = "cloudflare-issuer"
 	issuer.Namespace = namespace
-	issuer.Labels[opdefault.RelatedLiveKitMeshKey] = opdefault.ComponentCertManager
+	issuer.Labels[opdefault.RelatedLiveKitMeshKey] = opdefault.ComponentApplicationExpose
 
 	solver := &issuer.Spec.IssuerConfig.ACME.Solvers[0]
 	solver.DNS01 = &acmev1.ACMEChallengeSolverDNS01{
@@ -92,7 +93,7 @@ func newCloudFlareIssuer(certManager *lkstnv1a1.CertManager, namespace string) (
 	}
 	solver.Selector = &acmev1.CertificateDNSNameSelector{
 		DNSZones: []string{
-			*certManager.Issuer.DnsZone,
+			*appExpose.HostName,
 		},
 	}
 
@@ -104,7 +105,7 @@ func newCloudFlareIssuer(certManager *lkstnv1a1.CertManager, namespace string) (
 	secret := baseSecret
 	secret.Name = "cloudflare-api-token-secret"
 	secret.Namespace = namespace
-	secret.Labels[opdefault.RelatedLiveKitMeshKey] = opdefault.ComponentCertManager
+	secret.Labels[opdefault.RelatedLiveKitMeshKey] = opdefault.ComponentApplicationExpose
 
 	secret.Data[opdefault.DefaultClusterIssuerSecretApiTokenKey] = []byte(*certManager.Issuer.ApiToken)
 

@@ -419,6 +419,40 @@ func (u *Updater) upsertUDPRoute(udpr *stnrgwv1.UDPRoute, gen int) (ctrlutil.Ope
 	return op, nil
 }
 
+func (u *Updater) upsertHTTPRoute(httpr *gwapiv1.HTTPRoute, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert httproute", "resource", store.GetObjectKey(httpr), "generation", gen)
+
+	current := &gwapiv1.HTTPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      httpr.GetName(),
+			Namespace: httpr.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, httpr)
+		if err != nil {
+			return err
+		}
+
+		httprSpec := &httpr.Spec
+		currentSpec := &current.Spec
+		httprSpec.DeepCopyInto(currentSpec)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert httproute %q: %w",
+			store.GetObjectKey(httpr), err)
+	}
+
+	u.log.V(1).Info("httpproute upserted", "resource", store.GetObjectKey(httpr), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
 func mergeMetadata(dst, src client.Object) error {
 	labs := labels.Merge(dst.GetLabels(), src.GetLabels())
 	dst.SetLabels(labs)

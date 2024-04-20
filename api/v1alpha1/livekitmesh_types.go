@@ -23,6 +23,15 @@ import (
 	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
+type TurnServer struct {
+	Credential *string `yaml:"credential" json:"credential,omitempty"`
+	Host       *string `yaml:"host" json:"host,omitempty"`
+	Port       *int    `yaml:"port" json:"port,omitempty"`
+	Protocol   *string `yaml:"protocol" json:"protocol,omitempty"`
+	Username   *string `yaml:"username" json:"username,omitempty"`
+	AuthURI    *string `yaml:"uri,omitempty" json:"uri,omitempty"`
+}
+
 type Container struct {
 	// Container image name.
 	//
@@ -113,22 +122,15 @@ type Redis struct {
 	Address *string `yaml:"address" json:"address,omitempty"`
 }
 
-type TurnServer struct {
-	Credential *string `yaml:"credential" json:"credential,omitempty"`
-	Host       *string `yaml:"host" json:"host,omitempty"`
-	Port       *int    `yaml:"port" json:"port,omitempty"`
-	Protocol   *string `yaml:"protocol" json:"protocol,omitempty"`
-	Username   *string `yaml:"username" json:"username,omitempty"`
-	AuthURI    *string `yaml:"uri,omitempty" json:"uri,omitempty"`
-}
-
 type Rtc struct {
 	PortRangeEnd   *int         `yaml:"port_range_end" json:"port_range_end,omitempty"`
 	PortRangeStart *int         `yaml:"port_range_start" json:"port_range_start,omitempty"`
 	TcpPort        *int         `yaml:"tcp_port" json:"tcp_port,omitempty"`
 	StunServers    []string     `yaml:"stun_servers" json:"stun_servers,omitempty"`
 	TurnServers    []TurnServer `yaml:"turn_servers" json:"turn_servers,omitempty"`
-	UseExternalIp  *bool        `yaml:"use_external_ip" json:"use_external_ip,omitempty"`
+	// +kubebuilder:default=false
+	// +optional
+	UseExternalIp *bool `yaml:"use_external_ip" json:"use_external_ip,omitempty"`
 }
 
 type LiveKitConfig struct {
@@ -137,11 +139,6 @@ type LiveKitConfig struct {
 	Port     *int    `yaml:"port" json:"port,omitempty"`
 	Redis    *Redis  `yaml:"redis" json:"redis,omitempty"`
 	Rtc      *Rtc    `yaml:"rtc" json:"rtc,omitempty"`
-	//Turn struct {
-	//	Enabled                 bool `yaml:"enabled" json:"enabled,omitempty"`
-	//	LoadBalancerAnnotations struct {
-	//	} `yaml:"loadBalancerAnnotations" json:"loadBalancerAnnotations"`
-	//} `yaml:"turn" json:"turn,omitempty"`
 }
 
 type Deployment struct {
@@ -211,12 +208,6 @@ type Issuer struct {
 	// +kubebuilder:validation:Required
 	ChallengeSolver *string `json:"challengeSolver"`
 
-	// DnsZone Certificate requests will be issues against this DnsZone.
-	// This ChallengeSolver will use this to solve the challenge.
-	//
-	// +kubebuilder:validation:Required
-	DnsZone *string `json:"dnsZone"`
-
 	// ApiToken is the API token for the CloudFlare account that owns the challenged DnsZone
 	//
 	// +kubebuilder:validation:Required
@@ -243,22 +234,30 @@ type Monitoring struct {
 	//TODO
 }
 
-type Gateway struct {
-
-	// RelatedStunnerGatewayAnnotations is the name of the related gateway name for STUNner
-	// When deploying the LiveKit server pod we need to know the external IP of the LB SVC
-	// that was created based on the very given GW
-	// The value of this filed will be present in the SVC's annotation list
-	RelatedStunnerGatewayAnnotations *NamespacedName `json:"relatedStunnerGatewayAnnotations"`
-}
-
 type Stunner struct {
 
-	// GatewayConfig is the configuration for the STUNner deployment's GatewayConfig object
-	GatewayConfig *stnrgwv1.GatewayConfigSpec `json:"gatewayConfig"`
+	// GatewayConfig is the configuration for the STUNner deployment's GatewayConfig.spec object
+	GatewayConfig *stnrgwv1.GatewayConfigSpec `yaml:"gatewayConfig" json:"gatewayConfig"`
 
 	// GatewayListeners is the configuration of the STUNner deployment's Gateway object
-	GatewayListeners []gwapiv1.Listener `json:"gatewayListeners"`
+	GatewayListeners []gwapiv1.Listener `yaml:"gatewayListeners" json:"gatewayListeners"`
+}
+
+type ApplicationExpose struct {
+
+	// HostName is the DNS host name that will be used by both cert-manager and Envoy GW.
+	// DnsZone Certificate requests will be issues against this HostName.
+	// This ChallengeSolver will use this to solve the challenge.
+	//
+	// +kubebuilder:validation:Required
+	HostName *string `yaml:"hostName" json:"hostName"`
+
+	// CertManager will obtain certificates from a variety of Issuers, both popular public Issuers and private Issuers,
+	// and ensure the certificates are valid and up-to-date, and will attempt to renew certificates at a configured time before expiry.
+	//
+	//
+	// +optional
+	CertManager *CertManager `yaml:"certManager" json:"certManager,omitempty"`
 }
 
 type Component struct {
@@ -284,17 +283,9 @@ type Component struct {
 	// +optional
 	Egress *Egress `json:"egress,omitempty"`
 
-	// Gateway field should hold the configuration for ANY Gateway deployments in the cluster (STUNner and Envoy)
-	//
-	// +optional
-	Gateway *Gateway `json:"gateway"`
-
-	// CertManager will obtain certificates from a variety of Issuers, both popular public Issuers and private Issuers,
-	// and ensure the certificates are valid and up-to-date, and will attempt to renew certificates at a configured time before expiry.
-	//
-	//
-	// +optional
-	CertManager *CertManager `json:"certManager,omitempty"`
+	// ApplicationExpose is the component that contains all required subcomponents that are accountable for exposing the
+	// application to the internet on a secure, encrypted way. This includes the Cert-manager, Envoy GW, and ExternalDns.
+	ApplicationExpose *ApplicationExpose `json:"applicationExpose"`
 
 	// Monitoring enables the Prometheus metric exposition, installs
 	// a Prometheus operator and Grafana operator with the corresponding resources

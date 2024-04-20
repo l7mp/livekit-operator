@@ -122,23 +122,25 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 							PortRangeEnd:   &TestPortRangeEnd,
 							PortRangeStart: &TestPortRangeStart,
 							TcpPort:        &TestTCPPort,
-							StunServers:    nil,
-							TurnServers: []lkstnv1a1.TurnServer{{
-								AuthURI: &TestAuthUri,
-								//Credential: TestConfigCredential,
-								//Host:
-							}},
+							//StunServers:    nil,
+							//TurnServers: []lkstnv1a1.TurnServer{{
+							//	AuthURI: &TestAuthUri,
+							//	//Credential: TestConfigCredential,
+							//	//Host:
+							//}},
 							UseExternalIp: &TestUseExternalIP,
 						},
 					},
 				},
 			},
-			CertManager: &lkstnv1a1.CertManager{
-				Issuer: &lkstnv1a1.Issuer{
-					Email:           &TestIssuerEmail,
-					ChallengeSolver: &TestIssuerChallengeSolver,
-					DnsZone:         &TestIssuerDnsZone,
-					ApiToken:        &TestApiToken,
+			ApplicationExpose: &lkstnv1a1.ApplicationExpose{
+				HostName: &TestIssuerDnsZone,
+				CertManager: &lkstnv1a1.CertManager{
+					Issuer: &lkstnv1a1.Issuer{
+						Email:           &TestIssuerEmail,
+						ChallengeSolver: &TestIssuerChallengeSolver,
+						ApiToken:        &TestApiToken,
+					},
 				},
 			},
 			Stunner: &lkstnv1a1.Stunner{
@@ -158,15 +160,8 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 				},
 				},
 			},
-			Ingress: nil,
-			//Gateway: &lkstnv1a1.Gateway{
-			//	RelatedStunnerGatewayAnnotations: &lkstnv1a1.NamespacedName{
-			//		Namespace: &TestNsName,
-			//		Name:      &TestGatewayNamespacedName,
-			//	},
-			//},
+			Ingress:    nil,
 			Egress:     nil,
-			Gateway:    nil,
 			Monitoring: nil,
 		},
 	},

@@ -88,14 +88,14 @@ func (r *Renderer) renderStunnerUdpRoute(renderContext *RenderContext) {
 
 func createStunnerGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 
-	name := GetStunnerGatewayName(lkMesh.Name)
+	name := getStunnerGatewayName(lkMesh.Name)
 	labels := map[string]string{
 		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
 		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
 		opdefault.RelatedComponent:      opdefault.ComponentStunner,
 	}
 
-	if current := store.UDPRoutes.GetObject(types.NamespacedName{
+	if current := store.Gateways.GetObject(types.NamespacedName{
 		Namespace: lkMesh.Namespace,
 		Name:      name,
 	}); current != nil {
@@ -115,7 +115,7 @@ func createStunnerGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 			},
 		},
 		Spec: gwapiv1.GatewaySpec{
-			GatewayClassName: gwapiv1.ObjectName(GetStunnerGatewayClassName(lkMesh.Name)),
+			GatewayClassName: gwapiv1.ObjectName(getStunnerGatewayClassName(lkMesh.Name)),
 			Listeners:        lkMesh.Spec.Components.Stunner.GatewayListeners,
 		},
 		Status: gwapiv1.GatewayStatus{},
@@ -124,7 +124,7 @@ func createStunnerGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 
 func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.GatewayConfig {
 
-	name := GetStunnerGatewayConfigName(lkMesh.Name)
+	name := getStunnerGatewayConfigName(lkMesh.Name)
 
 	labels := map[string]string{
 		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
@@ -134,7 +134,7 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 
 	lkGwConfig := *lkMesh.Spec.Components.Stunner.GatewayConfig
 
-	if current := store.GatewayClasses.GetObject(types.NamespacedName{
+	if current := store.GatewayConfigs.GetObject(types.NamespacedName{
 		Namespace: lkMesh.Namespace,
 		Name:      name,
 	}); current != nil {
@@ -173,7 +173,7 @@ func createStunnerGatewayConfig(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.Gateway
 
 func createStunnerGatewayClass(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.GatewayClass {
 
-	name := GetStunnerGatewayClassName(lkMesh.Name)
+	name := getStunnerGatewayClassName(lkMesh.Name)
 	ns := gwapiv1.Namespace(lkMesh.Namespace)
 	desc := fmt.Sprintf("GatewayClass-LiveKitMesh-%s", lkMesh.GetName())
 
@@ -207,7 +207,7 @@ func createStunnerGatewayClass(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.GatewayCl
 			ParametersRef: &gwapiv1.ParametersReference{
 				Group:     stnrpgkv1.DefaultRealm,
 				Kind:      "GatewayConfig",
-				Name:      GetStunnerGatewayConfigName(lkMesh.Name),
+				Name:      getStunnerGatewayConfigName(lkMesh.Name),
 				Namespace: &ns,
 			},
 			Description: &desc,
@@ -218,7 +218,7 @@ func createStunnerGatewayClass(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.GatewayCl
 func createStunnerUDPRoute(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.UDPRoute {
 
 	backendRefSvcName := ServiceNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
-	name := GetStunnerUDPRouteName(lkMesh.Name)
+	name := getStunnerUDPRouteName(lkMesh.Name)
 	ns := gwapiv1.Namespace(lkMesh.Namespace)
 
 	labels := map[string]string{
@@ -249,7 +249,7 @@ func createStunnerUDPRoute(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.UDPRoute {
 		Spec: stnrgwv1.UDPRouteSpec{
 			CommonRouteSpec: gwapiv1.CommonRouteSpec{
 				ParentRefs: []gwapiv1.ParentReference{{
-					Name:      gwapiv1.ObjectName(GetStunnerGatewayName(lkMesh.Name)),
+					Name:      gwapiv1.ObjectName(getStunnerGatewayName(lkMesh.Name)),
 					Namespace: &ns,
 				}},
 			},

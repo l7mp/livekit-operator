@@ -20,12 +20,14 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 	dp := lkMesh.Spec.Components.LiveKit.Deployment
 	name := ConfigMapNameFormat(*dp.Name)
 	config := dp.Config
+
 	//TODO fix the below code, first turn address is taken, others are left there
 	iceServers := *iceConfig.IceServers
 	iceAuthenticationToken := iceServers[0]
 	urls := *iceAuthenticationToken.Urls
 	username := *iceAuthenticationToken.Username
 	credential := *iceAuthenticationToken.Credential
+	protocol := "udp"
 	for i, url := range urls {
 		host, port, err := getAddressAndPortFromTurnUrl(url)
 		if err != nil {
@@ -35,7 +37,16 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 		config.Rtc.TurnServers[i].Credential = &credential
 		config.Rtc.TurnServers[i].Host = host
 		config.Rtc.TurnServers[i].Port = port
+		config.Rtc.TurnServers[i].Protocol = &protocol
 	}
+	if lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis == nil {
+		redisAddress := fmt.Sprintf("%s.%s.svc:6379", RedisNameFormat(lkMesh.GetName()), lkMesh.Namespace)
+		config.Redis = &lkstnv1a1.Redis{
+			Address: &redisAddress,
+		}
+	}
+
+	//config.Rtc.StunServers = fmt.Sprintf("%s:%s", )
 
 	yamlData, err := yaml.Marshal(&config)
 	if err != nil {

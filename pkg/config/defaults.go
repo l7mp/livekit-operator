@@ -47,6 +47,9 @@ const (
 
 	// RelatedConfigMapKey is the key of the annotation for the related config map for a LiveKit deployment
 	RelatedConfigMapKey = "livekit.l7mp.io/related-config-map"
+
+	// HostnameAnnotationKey is the key of the annotation which defines the host name for the ExternalDNS controller to set
+	HostnameAnnotationKey = "external-dns.alpha.kubernetes.io/hostname"
 )
 
 // Statuses for the LiveKitMesh
@@ -65,15 +68,13 @@ const (
 	StatusActionRequired = "ACTION_REQUIRED"
 )
 
-// Component names
 const (
-	ComponentLiveKit     = "LIVEKIT"
-	ComponentIngress     = "INGRESS"
-	ComponentEgress      = "EGRESS"
-	ComponentGateway     = "GATEWAY"
-	ComponentCertManager = "CERTMANAGER"
-	ComponentMonitoring  = "MONITORING"
-	ComponentStunner     = "STUNNER"
+	ComponentLiveKit           = "LIVEKIT"
+	ComponentIngress           = "INGRESS"
+	ComponentEgress            = "EGRESS"
+	ComponentApplicationExpose = "APPLICATION_EXPOSE"
+	ComponentMonitoring        = "MONITORING"
+	ComponentStunner           = "STUNNER"
 )
 
 // Issuer challenge provider types

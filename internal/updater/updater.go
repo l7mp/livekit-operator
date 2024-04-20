@@ -127,5 +127,12 @@ func (u *Updater) processUpdate(e *event.Update) error {
 			u.log.Error(err, "cannot update udproute", "operation", op)
 		}
 	}
+
+	for _, httpr := range uq.HTTPRoutes.GetAll() {
+		if op, err := u.upsertHTTPRoute(httpr, gen); err != nil {
+			u.log.Error(err, "cannot update httproute", "operation", op)
+		}
+	}
+
 	return nil
 }
