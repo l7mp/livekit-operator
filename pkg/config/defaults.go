@@ -101,4 +101,7 @@ const (
 
 	// CertManagerChartNamespace is the default namespace where the Cert-Manager chart should be deployed
 	CertManagerChartNamespace = "cert-manager"
+
+	// ExternalDNSNamespace is the default namespace where the ExternalDNS chart should be deployed
+	ExternalDNSNamespace = "external-dns"
 )
