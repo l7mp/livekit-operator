@@ -62,12 +62,19 @@ func (e *ExternalDNS) InstallChart(ctx context.Context, logger logr.Logger) erro
 		Wait:            true,
 		WaitForJobs:     true,
 		Timeout:         5 * time.Minute,
-		ValuesYaml: `sources:
+		ValuesYaml: `
+sources:
 - gateway-httproute
 - gateway-grpcroute
 - gateway-tcproute
 - gateway-tlsroute
-- gateway-udproute`,
+- gateway-udproute
+provider=cloudflare
+env:
+- name: CF_API_KEY
+  value: "V5g7yndcMqkzJh4-cOUmIQfeowaBPh2UwvUAUBIb"
+- name: CF_API_EMAIL
+  value: "info@l7mp.io"`,
 	})
 
 	// Install or upgrade a chart.

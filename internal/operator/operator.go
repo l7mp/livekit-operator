@@ -63,10 +63,10 @@ func (o *Operator) Start(ctx context.Context) error {
 			return fmt.Errorf("cannot install Stunner-Gateway-Operator: %w", err)
 		}
 
-		log.Info("start installing ExternalDNS")
-		if err := external.ExternalDNSChart.InstallChart(o.ctx, o.logger); err != nil {
-			return fmt.Errorf("cannot install ExternalDNS: %w", err)
-		}
+		//log.Info("start installing ExternalDNS")
+		//if err := external.ExternalDNSChart.InstallChart(o.ctx, o.logger); err != nil {
+		//	return fmt.Errorf("cannot install ExternalDNS: %w", err)
+		//}
 	}
 
 	log.Info("starting LiveKitOperator controller")
