@@ -97,7 +97,7 @@ func createExternalDNSServiceAccount(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Serv
 func createExternalDNSClusterRole(lkMesh *lkstnv1a1.LiveKitMesh) *rbacv1.ClusterRole {
 	role := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getExternalDNSClusterRoleName(lkMesh.Name),
+			Name: getExternalDNSClusterRoleName(lkMesh.Name, lkMesh.Namespace),
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
 				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
@@ -122,7 +122,7 @@ func createExternalDNSClusterRole(lkMesh *lkstnv1a1.LiveKitMesh) *rbacv1.Cluster
 func createExternalDNSClusterRoleBinding(lkMesh *lkstnv1a1.LiveKitMesh) *rbacv1.ClusterRoleBinding {
 	roleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getExternalDNSClusterRoleBindingName(lkMesh.Name),
+			Name: getExternalDNSClusterRoleBindingName(lkMesh.Name, lkMesh.Namespace),
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
 				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
@@ -132,7 +132,7 @@ func createExternalDNSClusterRoleBinding(lkMesh *lkstnv1a1.LiveKitMesh) *rbacv1.
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
-			Name:     getExternalDNSClusterRoleName(lkMesh.Name),
+			Name:     getExternalDNSClusterRoleName(lkMesh.Name, lkMesh.Namespace),
 		},
 		Subjects: []rbacv1.Subject{{
 			Kind:      "ServiceAccount",
