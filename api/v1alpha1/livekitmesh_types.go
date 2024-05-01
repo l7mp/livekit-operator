@@ -243,6 +243,21 @@ type Stunner struct {
 	GatewayListeners []gwapiv1.Listener `yaml:"gatewayListeners" json:"gatewayListeners"`
 }
 
+type CloudFlare struct {
+	// Token is the API Token to authenticate the external DNS requests towards the CloudFlare servers
+	Token *string `yaml:"token" json:"token"`
+
+	// Email is the email address of the account associated with the Token provided
+	Email *string `yaml:"email" json:"email"`
+}
+
+type ExternalDNS struct {
+
+	// CloudFlare holds the necessary configuration for the CloudFlare ExternalDNS integration.
+	// Currently, only CloudFlare is supported by the operator.
+	CloudFlare *CloudFlare `yaml:"cloudFlare" json:"cloudFlare"`
+}
+
 type ApplicationExpose struct {
 
 	// HostName is the DNS host name that will be used by both cert-manager and Envoy GW.
@@ -258,6 +273,15 @@ type ApplicationExpose struct {
 	//
 	// +optional
 	CertManager *CertManager `yaml:"certManager" json:"certManager,omitempty"`
+
+	// ExternalDNS creates the A record in the DNS provider configured.
+	// Currently, only CloudFlare is support. To use other DNS services please configure your own External DNS deployment
+	// and omit this field.
+	// Make sure to enable RBAC resources to watch HTTPRoutes and/or services.
+	// See more: https://github.com/kubernetes-sigs/external-dns/tree/master/docs/tutorials
+	//
+	// +optional
+	ExternalDNS *ExternalDNS `yaml:"externalDNS" json:"externalDNS"`
 }
 
 type Component struct {

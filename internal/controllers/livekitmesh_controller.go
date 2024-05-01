@@ -25,6 +25,7 @@ import (
 	stnrgwv1 "github.com/l7mp/stunner-gateway-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
@@ -101,6 +102,9 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var gatewayConfigList []client.Object
 	var gatewayList []client.Object
 	var udpRouteList []client.Object
+	var serviceAccountList []client.Object
+	var clusterRoleList []client.Object
+	var clusterRoleBindingList []client.Object
 
 	//find liveKitMesh resources in the cluster
 	liveKitMeshes := &lkstnv1a1.LiveKitMeshList{}
@@ -217,6 +221,39 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
+	serviceAccounts := &corev1.ServiceAccountList{}
+	if err := r.List(ctx, serviceAccounts, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining ServiceAccount objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, svcAcc := range serviceAccounts.Items {
+			svcAcc := svcAcc
+			serviceAccountList = append(serviceAccountList, &svcAcc)
+		}
+	}
+
+	roles := &v1.ClusterRoleList{}
+	if err := r.List(ctx, roles, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining ClusterRole objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, role := range roles.Items {
+			role := role
+			clusterRoleList = append(clusterRoleList, &role)
+		}
+	}
+
+	roleBindings := &v1.ClusterRoleBindingList{}
+	if err := r.List(ctx, roleBindings, ownedByListOps); err != nil {
+		log.Error(err, "error obtaining ClusterRoleBinding objects")
+		return ctrl.Result{}, err
+	} else {
+		for _, roleBind := range roleBindings.Items {
+			roleBind := roleBind
+			clusterRoleBindingList = append(clusterRoleBindingList, &roleBind)
+		}
+	}
+
 	store.LiveKitMeshes.Reset(liveKitMeshList)
 	log.Info("reset LiveKitMesh store", "lkmeshes", store.LiveKitMeshes.String())
 
@@ -240,6 +277,15 @@ func (r *LiveKitMeshReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	store.Gateways.Reset(gatewayList)
 	log.Info("reset Gateway store", "gateways", store.Gateways.String())
+
+	store.ServiceAccounts.Reset(serviceAccountList)
+	log.Info("reset ServiceAccount store", "serviceaccounts", store.ServiceAccounts.String())
+
+	store.ClusterRoles.Reset(clusterRoleList)
+	log.Info("reset ClusterRole store", "clusterroles", store.ClusterRoles.String())
+
+	store.ClusterRoleBindings.Reset(clusterRoleBindingList)
+	log.Info("reset ClusterRoleBinding store", "clusterrolebindings", store.ClusterRoleBindings.String())
 
 	r.eventCh <- ievent.NewEventRender()
 

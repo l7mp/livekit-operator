@@ -9,6 +9,7 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -453,6 +454,103 @@ func (u *Updater) upsertHTTPRoute(httpr *gwapiv1.HTTPRoute, gen int) (ctrlutil.O
 	return op, nil
 }
 
+func (u *Updater) upsertServiceAccount(sa *corev1.ServiceAccount, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert serviceaccount", "resource", store.GetObjectKey(sa), "generation", gen)
+
+	current := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      sa.GetName(),
+			Namespace: sa.GetNamespace(),
+		},
+	}
+
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, sa)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert serviceaccount %q: %w",
+			store.GetObjectKey(sa), err)
+	}
+
+	u.log.V(1).Info("serviceaccount upserted", "resource", store.GetObjectKey(sa), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertClusterRole(r *rbacv1.ClusterRole, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert clusterrole", "resource", store.GetObjectKey(r), "generation", gen)
+
+	current := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: r.GetName(),
+		},
+	}
+
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		mergeMetadataForClusterScopedResources(current, r)
+
+		current.Rules = make([]rbacv1.PolicyRule, len(r.Rules))
+		for i := range r.Rules {
+			r.Rules[i].DeepCopyInto(&current.Rules[i])
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert clusterrole %q: %w",
+			store.GetObjectKey(r), err)
+	}
+
+	u.log.V(1).Info("clusterrole upserted", "resource", store.GetObjectKey(r), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertClusterRoleBinding(rb *rbacv1.ClusterRoleBinding, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert clusterrolebinding", "resource", store.GetObjectKey(rb), "generation", gen)
+
+	current := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: rb.GetName(),
+		},
+	}
+
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		mergeMetadataForClusterScopedResources(current, rb)
+
+		rb.RoleRef.DeepCopyInto(&current.RoleRef)
+
+		current.Subjects = make([]rbacv1.Subject, len(rb.Subjects))
+		for i := range rb.Subjects {
+			rb.Subjects[i].DeepCopyInto(&current.Subjects[i])
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert clusterrolebinding %q: %w",
+			store.GetObjectKey(rb), err)
+	}
+
+	u.log.V(1).Info("clusterrolebinding upserted", "resource", store.GetObjectKey(rb), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
 func mergeMetadata(dst, src client.Object) error {
 	labs := labels.Merge(dst.GetLabels(), src.GetLabels())
 	dst.SetLabels(labs)
@@ -467,6 +565,20 @@ func mergeMetadata(dst, src client.Object) error {
 	dst.SetAnnotations(annotations)
 
 	return addOwnerRef(dst, src)
+}
+
+func mergeMetadataForClusterScopedResources(dst, src client.Object) {
+	labs := labels.Merge(dst.GetLabels(), src.GetLabels())
+	dst.SetLabels(labs)
+
+	annotations := dst.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	for k, v := range src.GetAnnotations() {
+		annotations[k] = v
+	}
+	dst.SetAnnotations(annotations)
 }
 
 func addOwnerRef(dst, src client.Object) error {

@@ -156,7 +156,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 		ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name), //TODO FIXME copy base config two given namespace and populate it with right config
+					Name: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 				},
 				Key: "config.yaml",
 			},

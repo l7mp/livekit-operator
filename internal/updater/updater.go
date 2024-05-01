@@ -134,5 +134,23 @@ func (u *Updater) processUpdate(e *event.Update) error {
 		}
 	}
 
+	for _, sa := range uq.ServiceAccounts.GetAll() {
+		if op, err := u.upsertServiceAccount(sa, gen); err != nil {
+			u.log.Error(err, "cannot update serviceaccount", "operation", op)
+		}
+	}
+
+	for _, r := range uq.ClusterRoles.GetAll() {
+		if op, err := u.upsertClusterRole(r, gen); err != nil {
+			u.log.Error(err, "cannot update clusterrole", "operation", op)
+		}
+	}
+
+	for _, rb := range uq.ClusterRoleBindings.GetAll() {
+		if op, err := u.upsertClusterRoleBinding(rb, gen); err != nil {
+			u.log.Error(err, "cannot update clusterrolebinding", "operation", op)
+		}
+	}
+
 	return nil
 }

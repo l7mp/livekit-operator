@@ -50,6 +50,9 @@ const (
 
 	// HostnameAnnotationKey is the key of the annotation which defines the host name for the ExternalDNS controller to set
 	HostnameAnnotationKey = "external-dns.alpha.kubernetes.io/hostname"
+
+	// ExternalDNSLabelKey is the key of the label for the ExternalDNS deployment
+	ExternalDNSLabelKey = "livekit.l7mp.io/app"
 )
 
 // Statuses for the LiveKitMesh

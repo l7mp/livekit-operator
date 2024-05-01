@@ -6,18 +6,21 @@ import (
 
 // UpdateConf render event
 type UpdateConf struct {
-	ConfigMaps     *store.ConfigMapStore
-	LiveKitMeshes  *store.LiveKitMeshStore
-	Services       *store.ServiceStore
-	Deployments    *store.DeploymentStore
-	Issuer         *store.IssuerStore
-	Secrets        *store.SecretStore
-	StatefulSets   *store.StatefulSetStore
-	UDPRoutes      *store.UDPRouteStore
-	HTTPRoutes     *store.HTTPRouteStore
-	Gateways       *store.GatewayStore
-	GatewayClasses *store.GatewayClassStore
-	GatewayConfigs *store.GatewayConfigStore
+	ConfigMaps          *store.ConfigMapStore
+	LiveKitMeshes       *store.LiveKitMeshStore
+	Services            *store.ServiceStore
+	Deployments         *store.DeploymentStore
+	Issuer              *store.IssuerStore
+	Secrets             *store.SecretStore
+	StatefulSets        *store.StatefulSetStore
+	UDPRoutes           *store.UDPRouteStore
+	HTTPRoutes          *store.HTTPRouteStore
+	Gateways            *store.GatewayStore
+	GatewayClasses      *store.GatewayClassStore
+	GatewayConfigs      *store.GatewayConfigStore
+	ServiceAccounts     *store.ServiceAccountStore
+	ClusterRoles        *store.ClusterRoleStore
+	ClusterRoleBindings *store.ClusterRoleBindingStore
 }
 
 type Update struct {
@@ -32,23 +35,26 @@ func NewEventUpdate(generation int) *Update {
 	return &Update{
 		Type: TypeUpdate,
 		UpsertQueue: UpdateConf{
-			LiveKitMeshes:  store.NewLivekitMeshStore(),
-			ConfigMaps:     store.NewConfigMapStore(),
-			Services:       store.NewServiceStore(),
-			Deployments:    store.NewDeploymentStore(),
-			Issuer:         store.NewIssuerStore(),
-			Secrets:        store.NewSecretStore(),
-			StatefulSets:   store.NewStatefulSetStore(),
-			UDPRoutes:      store.NewUDPRouteStore(),
-			HTTPRoutes:     store.NewHTTPRouteStore(),
-			Gateways:       store.NewGatewayStore(),
-			GatewayClasses: store.NewGatewayClassStore(),
-			GatewayConfigs: store.NewGatewayConfigStore(),
+			LiveKitMeshes:       store.NewLivekitMeshStore(),
+			ConfigMaps:          store.NewConfigMapStore(),
+			Services:            store.NewServiceStore(),
+			Deployments:         store.NewDeploymentStore(),
+			Issuer:              store.NewIssuerStore(),
+			Secrets:             store.NewSecretStore(),
+			StatefulSets:        store.NewStatefulSetStore(),
+			UDPRoutes:           store.NewUDPRouteStore(),
+			HTTPRoutes:          store.NewHTTPRouteStore(),
+			Gateways:            store.NewGatewayStore(),
+			GatewayClasses:      store.NewGatewayClassStore(),
+			GatewayConfigs:      store.NewGatewayConfigStore(),
+			ServiceAccounts:     store.NewServiceAccountStore(),
+			ClusterRoles:        store.NewClusterRoleStore(),
+			ClusterRoleBindings: store.NewClusterRoleBindingStore(),
 		},
 		DeleteQueue: UpdateConf{
 			LiveKitMeshes: store.NewLivekitMeshStore(),
 			ConfigMaps:    store.NewConfigMapStore(),
-			//FIXME not everything should be deleted/handled by us that what other operators should do
+			//FIXME Gatewayclass, clusterrole and clusterrolebinding should be deleted here
 		},
 		Generation: generation,
 	}

@@ -83,6 +83,35 @@ spec:
                             - challengeSolver
                             type: object
                         type: object
+                      externalDNS:
+                        description: 'ExternalDNS creates the A record in the DNS
+                          provider configured. Currently, only CloudFlare is support.
+                          To use other DNS services please configure your own External
+                          DNS deployment and omit this field. Make sure to enable
+                          RBAC resources to watch HTTPRoutes and/or services. See
+                          more: https://github.com/kubernetes-sigs/external-dns/tree/master/docs/tutorials'
+                        properties:
+                          cloudFlare:
+                            description: CloudFlare holds the necessary configuration
+                              for the CloudFlare ExternalDNS integration. Currently,
+                              only CloudFlare is supported by the operator.
+                            properties:
+                              email:
+                                description: Email is the email address of the account
+                                  associated with the Token provided
+                                type: string
+                              token:
+                                description: Token is the API Token to authenticate
+                                  the external DNS requests towards the CloudFlare
+                                  servers
+                                type: string
+                            required:
+                            - email
+                            - token
+                            type: object
+                        required:
+                        - cloudFlare
+                        type: object
                       hostName:
                         description: HostName is the DNS host name that will be used
                           by both cert-manager and Envoy GW. DnsZone Certificate requests

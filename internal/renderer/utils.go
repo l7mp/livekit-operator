@@ -118,3 +118,20 @@ func getAddressFromIceConfig(iceConfig *stnrauthsvc.IceConfig) string {
 	address := strings.Split(turnUrl, ":")[1]
 	return address
 }
+
+// ExternalDNS related utils
+func getExternalDNSDeploymentName(name string) string {
+	return fmt.Sprintf("%s-external-dns", name)
+}
+
+func getExternalDNSServiceAccountName(name string) string {
+	return fmt.Sprintf("%s-external-dns-service-account", name)
+}
+
+func getExternalDNSClusterRoleName(name string, namespace string) string {
+	return fmt.Sprintf("%s-%s-external-dns-role", namespace, name)
+}
+
+func getExternalDNSClusterRoleBindingName(name string, namespace string) string {
+	return fmt.Sprintf("%s-%s-external-dns-role-binding", namespace, name)
+}

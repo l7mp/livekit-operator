@@ -25,6 +25,7 @@ spec:
             port_range_end: 60000
             port_range_start: 50000
             tcp_port: 7801
+            # TODO remove turn_servers somehow
             turn_servers:
               - host: ""
             use_external_ip: false
@@ -33,7 +34,7 @@ spec:
 #          name: default-livekit-config
         # container template
         container:
-          image: davidkornel/livekit-patched:latest
+          image: livekit/livekit-server:v1.4.2
           imagePullPolicy: Always
           args: ["--disable-strict-config"]
           #          command: # TODO
@@ -47,21 +48,23 @@ spec:
             requests:
               cpu: 500m
               memory: 128Mi
-    certManager:
-      issuer:
-        apiToken: dummytoken
-        challengeSolver: cloudflare
-        dnsZone: example.com
-        email: dummy@dummy.com
-#    gateway:
-#      relatedStunnerGatewayAnnotations:
-#        name: udp-gateway
-#        namespace: stunner-gateway-system
+    applicationExpose:
+      hostName: livekit.stunner.cc
+      externalDNS:
+        cloudFlare:
+          token: <token>
+          email: info@l7mp.io
+      certManager:
+        issuer:
+          apiToken: <token>
+          challengeSolver: cloudflare
+          email: info@l7mp.io
+
     stunner:
       gatewayConfig:
         realm: stunner.l7mp.io
         authType: static
-        userName: "user-1"
+        userName: "username"
         password: "password"
       gatewayListeners:
         - name: udp-listener
