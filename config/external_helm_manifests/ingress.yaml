@@ -1,0 +1,162 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: GatewayClass
+metadata:
+  name: eg
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: eg
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-issuer
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: livekit-https
+      protocol: HTTPS
+      hostname: "*.livekit.stunner.cc"
+      port: 1935
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: livekitmesh-sample-server-envoy-gateway-https-secret
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: livekit-ingress
+spec:
+  parentRefs:
+    - name: eg
+  hostnames:
+    - ingress2.livekit.stunner.cc
+  rules:
+    - backendRefs:
+        - group: ""
+          kind: Service
+          name: livekitmesh-sample-ingress
+          port: 1935
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+#
+#
+#
+---
+# Source: ingress/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress
+data:
+  config.yaml: |
+    api_key: access_token
+    api_secret: secretsecretsecretsecretsecretsecret
+    cpu_cost:
+      rtmp_cpu_cost: 2
+    health_port: 7888
+    http_relay_port: 9090
+    logging:
+      level: debug
+    prometheus_port: 7889
+    redis:
+      address: livekitmesh-sample-redis.default.svc:6379
+    rtmp_port: 1935
+    serviceType: LoadBalancer
+    ws_url: ws://livekit-server-service.default.svc.cluster.local:443
+---
+# Source: ingress/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress
+  labels:
+    helm.sh/chart: ingress-0.9.0
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: ingress
+    app.kubernetes.io/version: "v0.9.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7888
+      protocol: TCP
+      name: ws
+    - port: 1935
+      protocol: TCP
+      name: rtmp
+  selector:
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: ingress
+---
+# Source: ingress/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingress
+  labels:
+    helm.sh/chart: ingress-0.9.0
+    app.kubernetes.io/name: ingress
+    app.kubernetes.io/instance: ingress
+    app.kubernetes.io/version: "v0.9.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ingress
+      app.kubernetes.io/instance: ingress
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: disabled
+        sidecar.istio.io/inject: "false"
+        checksum/config: 2cc74bc4d0fde3542c6a021d3631b0b18cd15b24f152b9eb1aa15678c375c4c3
+      labels:
+        app.kubernetes.io/name: ingress
+        app.kubernetes.io/instance: ingress
+    spec:
+      serviceAccountName: default
+      securityContext:
+        {}
+      terminationGracePeriodSeconds: 10800
+      containers:
+        - name: ingress
+          securityContext:
+            {}
+          image: "livekit/ingress:v1.1.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: INGRESS_CONFIG_BODY
+              valueFrom:
+                configMapKeyRef:
+                  name: ingress
+                  key: config.yaml
+          ports:
+            - name: health
+              containerPort: 7888
+              protocol: TCP
+            - name: http-relay
+              containerPort: 9090
+              protocol: TCP
+            - name: rtmp-port
+              containerPort: 1935
+              protocol: TCP
+            - name: metrics
+              containerPort: 7889
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: health
+          readinessProbe:
+            httpGet:
+              path: /
+              port: health
+
