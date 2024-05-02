@@ -24,7 +24,7 @@ const (
 
 var (
 	//baseUrl              = fmt.Sprintf("http://stunner-auth.%s.svc.cluster.local:8088/ice?service=%s", stunnerAuthNamespace, service)
-	baseUrlWithLbStunner = fmt.Sprintf("http://34.118.95.206:8088/ice?service=%s", service)
+	baseUrlWithLbStunner = fmt.Sprintf("http://34.116.179.113:8088/ice?service=%s", service)
 )
 
 func getIceConfigurationFromStunnerAuth(lkMesh v1alpha1.LiveKitMesh, log logr.Logger) (*stnrauthsvc.IceConfig, error) {

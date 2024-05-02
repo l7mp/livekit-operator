@@ -71,20 +71,15 @@ spec:
           port: 3478
           protocol: TURN-UDP
 
-#      service:
-#          name: lk-control
-#          type: LoadBalancer
-#          ports:
-#            - port: 1
-#              protocol: TCP
-#            - port: 2
-#              protocol: TCP
-  #
-  #
-  #
-  #
-  #
-  #
+    ingress:
+      ingressConfigs:
+        - inputType: 1
+          roomName: room
+          participantIdentity: my-participant
+          participantName: MyParticipant
+          bypassTranscoding: true
+          url: example.com
+
   #    scaling:
   #    #TODO
   #    ingress:

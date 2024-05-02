@@ -217,7 +217,7 @@ func createStunnerGatewayClass(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.GatewayCl
 
 func createStunnerUDPRoute(lkMesh *lkstnv1a1.LiveKitMesh) *stnrgwv1.UDPRoute {
 
-	backendRefSvcName := ServiceNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
+	backendRefSvcName := getLiveKitServiceName(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
 	name := getStunnerUDPRouteName(lkMesh.Name)
 	ns := gwapiv1.Namespace(lkMesh.Namespace)
 

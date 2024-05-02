@@ -14,9 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
-
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwapiv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 )
 
 func (u *Updater) upsertConfigMap(cm *corev1.ConfigMap, gen int) (ctrlutil.OperationResult, error) {
@@ -546,6 +546,40 @@ func (u *Updater) upsertClusterRoleBinding(rb *rbacv1.ClusterRoleBinding, gen in
 	}
 
 	u.log.V(1).Info("clusterrolebinding upserted", "resource", store.GetObjectKey(rb), "generation",
+		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
+
+	return op, nil
+}
+
+func (u *Updater) upsertTCPRoute(tcpr *gwapiv1a2.TCPRoute, gen int) (ctrlutil.OperationResult, error) {
+	u.log.V(2).Info("upsert httproute", "resource", store.GetObjectKey(tcpr), "generation", gen)
+
+	current := &gwapiv1a2.TCPRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tcpr.GetName(),
+			Namespace: tcpr.GetNamespace(),
+		},
+	}
+	mgrClient := u.manager.GetClient()
+	op, err := ctrlutil.CreateOrUpdate(u.ctx, mgrClient, current, func() error {
+		err := mergeMetadata(current, tcpr)
+		if err != nil {
+			return err
+		}
+
+		tcprSpec := &tcpr.Spec
+		currentSpec := &current.Spec
+		tcprSpec.DeepCopyInto(currentSpec)
+
+		return nil
+	})
+
+	if err != nil {
+		return ctrlutil.OperationResultNone, fmt.Errorf("cannot upsert tcproute %q: %w",
+			store.GetObjectKey(tcpr), err)
+	}
+
+	u.log.V(1).Info("tcpproute upserted", "resource", store.GetObjectKey(tcpr), "generation",
 		gen, "result", store.GetObjectKey(current)) //store.DumpObject(current))
 
 	return op, nil

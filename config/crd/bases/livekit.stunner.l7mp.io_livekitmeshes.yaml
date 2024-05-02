@@ -132,6 +132,48 @@ spec:
                       the Kubernetes cluster and further into a chosen room. Note
                       that this resource enables a one-way communication between the
                       client and the media server.
+                    properties:
+                      ingressConfigs:
+                        description: 'IngressConfigs is a list of ingress configurations.
+                          See more: https://docs.livekit.io/egress-ingress/ingress/overview/#CreateIngress'
+                        items:
+                          properties:
+                            bypassTranscoding:
+                              description: BypassTranscoding for WHIP ingress only,
+                                disables transcoding and simulcast
+                              type: boolean
+                            inputType:
+                              description: InputType decides whether the user wants
+                                to use RTMP (0) or  WHIP (1) as the input type of
+                                the ingress
+                              enum:
+                              - 0
+                              - 1
+                              - 2
+                              type: integer
+                            participantIdentity:
+                              description: ParticipantIdentity is the unique identity
+                                for the room participant the Ingress service will
+                                connect as
+                              type: string
+                            participantName:
+                              description: ParticipantName is the Name displayed in
+                                the room for the participant
+                              type: string
+                            roomName:
+                              description: RoomName is the name of the room to connect
+                                to
+                              type: string
+                            url:
+                              description: URL is the source URL of the file
+                              type: string
+                          required:
+                          - inputType
+                          - participantIdentity
+                          - participantName
+                          - roomName
+                          type: object
+                        type: array
                     type: object
                   liveKit:
                     description: LiveKit is the main resource that the operator manages.
@@ -144,6 +186,13 @@ spec:
                         properties:
                           config:
                             properties:
+                              ingress:
+                                properties:
+                                  rtmp_base_url:
+                                    type: string
+                                  whip_base_url:
+                                    type: string
+                                type: object
                               keys:
                                 properties:
                                   access_token:

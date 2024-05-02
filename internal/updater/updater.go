@@ -134,6 +134,12 @@ func (u *Updater) processUpdate(e *event.Update) error {
 		}
 	}
 
+	for _, tcpr := range uq.TCPRoutes.GetAll() {
+		if op, err := u.upsertTCPRoute(tcpr, gen); err != nil {
+			u.log.Error(err, "cannot update tcproute", "operation", op)
+		}
+	}
+
 	for _, sa := range uq.ServiceAccounts.GetAll() {
 		if op, err := u.upsertServiceAccount(sa, gen); err != nil {
 			u.log.Error(err, "cannot update serviceaccount", "operation", op)

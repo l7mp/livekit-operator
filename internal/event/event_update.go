@@ -15,6 +15,7 @@ type UpdateConf struct {
 	StatefulSets        *store.StatefulSetStore
 	UDPRoutes           *store.UDPRouteStore
 	HTTPRoutes          *store.HTTPRouteStore
+	TCPRoutes           *store.TCPRouteStore
 	Gateways            *store.GatewayStore
 	GatewayClasses      *store.GatewayClassStore
 	GatewayConfigs      *store.GatewayConfigStore
@@ -44,6 +45,7 @@ func NewEventUpdate(generation int) *Update {
 			StatefulSets:        store.NewStatefulSetStore(),
 			UDPRoutes:           store.NewUDPRouteStore(),
 			HTTPRoutes:          store.NewHTTPRouteStore(),
+			TCPRoutes:           store.NewTCPRouteStore(),
 			Gateways:            store.NewGatewayStore(),
 			GatewayClasses:      store.NewGatewayClassStore(),
 			GatewayConfigs:      store.NewGatewayConfigStore(),

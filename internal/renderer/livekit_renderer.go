@@ -6,12 +6,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
+func (r *Renderer) renderLiveKitConfigMap(renderContext *RenderContext) {
 	log := r.logger.WithName("renderLiveKitConfigMap")
 
 	log.V(2).Info("trying to render LiveKit-Server ConfigMap")
 
-	lkMesh := context.liveKitMesh
+	lkMesh := renderContext.liveKitMesh
 
 	iceConfig, err := getIceConfigurationFromStunnerAuth(*lkMesh, log)
 	if err != nil {
@@ -43,17 +43,17 @@ func (r *Renderer) renderLiveKitConfigMap(context *RenderContext) {
 		return
 	}
 
-	context.update.UpsertQueue.ConfigMaps.Upsert(cm)
+	renderContext.update.UpsertQueue.ConfigMaps.Upsert(cm)
 
 	log.V(2).Info("Upserted LiveKit-Server ConfigMap into UpsertQueue", "cm", store.GetObjectKey(cm))
 }
 
-func (r *Renderer) renderLiveKitService(context *RenderContext) {
+func (r *Renderer) renderLiveKitService(renderContext *RenderContext) {
 	log := r.logger.WithName("renderLiveKitService")
 
 	log.V(2).Info("trying to render LiveKit-Server Service")
 
-	lkMesh := context.liveKitMesh
+	lkMesh := renderContext.liveKitMesh
 	service := createLiveKitService(lkMesh)
 	if err := controllerutil.SetOwnerReference(lkMesh, service, r.scheme); err != nil {
 		log.Error(err, "cannot set owner reference", "owner",
@@ -62,7 +62,7 @@ func (r *Renderer) renderLiveKitService(context *RenderContext) {
 		return
 	}
 
-	context.update.UpsertQueue.Services.Upsert(service)
+	renderContext.update.UpsertQueue.Services.Upsert(service)
 
 	log.V(2).Info("Upserted LiveKit-Server Service into UpsertQueue", "cm", store.GetObjectKey(service))
 }
@@ -132,7 +132,7 @@ func (r *Renderer) renderLiveKitRedis(renderContext *RenderContext) {
 		//TODO why was the below added on the first hand?
 		/*	renderContext.update.UpsertQueue.ConfigMaps.Get(types.NamespacedName{
 			Namespace: lkMesh.GetNamespace(),
-			Name:      ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
+			Name:      getLiveKitServerConfigMapName(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 		})*/
 
 	} else {

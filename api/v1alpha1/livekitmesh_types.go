@@ -133,12 +133,18 @@ type Rtc struct {
 	UseExternalIp *bool `yaml:"use_external_ip" json:"use_external_ip,omitempty"`
 }
 
+type IngressAddresses struct {
+	RtmpBaseUrl *string `json:"rtmp_base_url,omitempty"`
+	WhipBaseUrl *string `json:"whip_base_url,omitempty"`
+}
+
 type LiveKitConfig struct {
-	Keys     *Keys   `yaml:"keys" json:"keys,omitempty"`
-	LogLevel *string `yaml:"log_level" json:"log_level,omitempty"`
-	Port     *int    `yaml:"port" json:"port,omitempty"`
-	Redis    *Redis  `yaml:"redis" json:"redis,omitempty"`
-	Rtc      *Rtc    `yaml:"rtc" json:"rtc,omitempty"`
+	Keys             *Keys             `yaml:"keys" json:"keys,omitempty"`
+	LogLevel         *string           `yaml:"log_level" json:"log_level,omitempty"`
+	Port             *int              `yaml:"port" json:"port,omitempty"`
+	Redis            *Redis            `yaml:"redis" json:"redis,omitempty"`
+	Rtc              *Rtc              `yaml:"rtc" json:"rtc,omitempty"`
+	IngressAddresses *IngressAddresses `yaml:"ingress" json:"ingress,omitempty"`
 }
 
 type Deployment struct {
@@ -214,9 +220,39 @@ type Issuer struct {
 	ApiToken *string `json:"apiToken"`
 }
 
+type IngressConfigs struct {
+
+	// InputType decides whether the user wants to use RTMP (0) or  WHIP (1) as the input type of the ingress
+	// +kubebuilder:validation:Enum=0;1;2
+	InputType *int `yaml:"inputType" json:"inputType"`
+
+	// RoomName is the name of the room to connect to
+	// +kubebuilder:validation:Required
+	RoomName *string `yaml:"roomName" json:"roomName"`
+
+	// ParticipantIdentity is the unique identity for the room participant the Ingress service will connect as
+	// +kubebuilder:validation:Required
+	ParticipantIdentity *string `yaml:"participantIdentity" json:"participantIdentity"`
+
+	// ParticipantName is the Name displayed in the room for the participant
+	// +kubebuilder:validation:Required
+	ParticipantName *string `yaml:"participantName" json:"participantName"`
+
+	// BypassTranscoding for WHIP ingress only, disables transcoding and simulcast
+	// +optional
+	BypassTranscoding *bool `yaml:"bypassTranscoding" json:"bypassTranscoding"`
+
+	// URL is the source URL of the file
+	URL *string `yaml:"url" json:"url,omitempty"`
+}
+
 // Ingress is the LiveKit tool not the gateway resource to ingest traffic into the cluster
 type Ingress struct {
-	//TODO
+
+	// IngressConfigs is a list of ingress configurations.
+	// See more: https://docs.livekit.io/egress-ingress/ingress/overview/#CreateIngress
+	// +optional
+	IngressConfigs []IngressConfigs `yaml:"ingressConfigs" json:"ingressConfigs"`
 }
 
 type Egress struct {

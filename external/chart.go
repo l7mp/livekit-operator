@@ -30,7 +30,8 @@ func (c *chartImpl) InstallChart(ctx context.Context, logger logr.Logger) error 
 
 func (c *chartImpl) UninstallChart() error {
 	//fmt.Println("uninstalling", "chart", c.chartSpec.ChartName)
-	return c.client.UninstallRelease(&c.chartSpec)
+	//return c.client.UninstallRelease(&c.chartSpec)
+	return nil
 }
 
 func (c *chartImpl) SetChartSpec(spec helmClient.ChartSpec) {

@@ -6,11 +6,12 @@ import (
 	"github.com/l7mp/livekit-operator/internal/store"
 	opdefault "github.com/l7mp/livekit-operator/pkg/config"
 	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
@@ -18,7 +19,7 @@ import (
 
 func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc.IceConfig) (*corev1.ConfigMap, error) {
 	dp := lkMesh.Spec.Components.LiveKit.Deployment
-	name := ConfigMapNameFormat(*dp.Name)
+	name := getLiveKitServerConfigMapName(*dp.Name)
 	config := dp.Config
 
 	//TODO fix the below code, first turn address is taken, others are left there
@@ -40,10 +41,17 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 		config.Rtc.TurnServers[i].Protocol = &protocol
 	}
 	if lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis == nil {
-		redisAddress := fmt.Sprintf("%s.%s.svc:6379", RedisNameFormat(lkMesh.GetName()), lkMesh.Namespace)
+		redisAddress := fmt.Sprintf("%s.%s.svc:6379", getRedisName(lkMesh.GetName()), lkMesh.Namespace)
 		config.Redis = &lkstnv1a1.Redis{
 			Address: &redisAddress,
 		}
+	}
+	if lkMesh.Spec.Components.Ingress != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
+		rtmp := fmt.Sprintf("rtmp://ingress.%s/rtmp", *lkMesh.Spec.Components.ApplicationExpose.HostName)
+		whip := fmt.Sprintf("https://ingress.%s/whip", *lkMesh.Spec.Components.ApplicationExpose.HostName)
+		config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+		config.IngressAddresses.RtmpBaseUrl = ptr.To(rtmp)
+		config.IngressAddresses.WhipBaseUrl = ptr.To(whip)
 	}
 
 	//config.Rtc.StunServers = fmt.Sprintf("%s:%s", )
@@ -85,7 +93,7 @@ func getAddressAndPortFromTurnUrl(url string) (*string, *int, error) {
 
 func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 
-	name := ServiceNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
+	name := getLiveKitServiceName(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
 
 	labels := map[string]string{
 		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
@@ -116,7 +124,7 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeLoadBalancer,
+			Type: corev1.ServiceTypeClusterIP,
 			Selector: map[string]string{
 				"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 				"app.kubernetes.io/instance": "livekit",
@@ -141,7 +149,7 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 	return svc
 }
 
-func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
+func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deployment {
 
 	containerSpec := lkMesh.Spec.Components.LiveKit.Deployment.Container
 	var envList []corev1.EnvVar
@@ -156,14 +164,14 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 		ValueFrom: &corev1.EnvVarSource{
 			ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
+					Name: getLiveKitServerConfigMapName(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 				},
 				Key: "config.yaml",
 			},
 		},
 	})
 
-	dp := &v1.Deployment{
+	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 			Namespace: lkMesh.Namespace,
@@ -180,10 +188,10 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
-				opdefault.RelatedConfigMapKey: ConfigMapNameFormat(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
+				opdefault.RelatedConfigMapKey: getLiveKitServerConfigMapName(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 			},
 		},
-		Spec: v1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: lkMesh.Spec.Components.LiveKit.Deployment.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -232,13 +240,13 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *v1.Deployment {
 	return dp
 }
 
-func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1.Service, *corev1.ConfigMap) {
+func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *corev1.Service, *corev1.ConfigMap) {
 
 	replicasValue := int32(1)
 
-	ss := &v1.StatefulSet{
+	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      RedisNameFormat(lkMesh.GetName()),
+			Name:      getRedisName(lkMesh.GetName()),
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
@@ -247,8 +255,8 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1
 				"app":                           "redis",
 			},
 		},
-		Spec: v1.StatefulSetSpec{
-			ServiceName: RedisNameFormat(lkMesh.GetName()),
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName: getRedisName(lkMesh.GetName()),
 			Replicas:    &replicasValue,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -328,7 +336,7 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*v1.StatefulSet, *corev1
 	// MUST be headless svc
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      RedisNameFormat(lkMesh.GetName()),
+			Name:      getRedisName(lkMesh.GetName()),
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
 				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,

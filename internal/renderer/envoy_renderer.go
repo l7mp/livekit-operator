@@ -57,5 +57,42 @@ func (r *Renderer) renderEnvoyHTTPRouteForLiveKitServer(renderContext *RenderCon
 	}
 
 	renderContext.update.UpsertQueue.HTTPRoutes.Upsert(httpRoute)
-	log.V(2).Info("Upserted STUNner HTTPRoute into UpsertQueue", "httproute", store.GetObjectKey(httpRoute))
+	log.V(2).Info("Upserted Envoy HTTPRoute into UpsertQueue", "httproute", store.GetObjectKey(httpRoute))
+}
+
+func (r *Renderer) renderEnvoyHTTPRouteForLiveKitIngress(renderContext *RenderContext) {
+	log := r.logger.WithName("renderEnvoyHTTPRouteForLiveKitIngress")
+
+	log.V(2).Info("trying to render Envoy LiveKitIngress HTTPPRoute")
+	lkMesh := renderContext.liveKitMesh
+
+	//httpRoute := createEnvoyTCPRoute(lkMesh)
+	httpRoute := createEnvoyLiveKitIngressHTTPRoute(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, httpRoute, r.scheme); err != nil {
+		log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(httpRoute))
+		return
+	}
+
+	renderContext.update.UpsertQueue.HTTPRoutes.Upsert(httpRoute)
+	log.V(2).Info("Upserted Envoy HTTPPRoute into UpsertQueue", "httproute", store.GetObjectKey(httpRoute))
+}
+
+func (r *Renderer) renderEnvoyGatewayForLiveKitIngress(renderContext *RenderContext) {
+	log := r.logger.WithName("renderEnvoyGatewayForLiveKitIngress")
+
+	log.V(2).Info("trying to render Envoy LiveKitIngress Gateway")
+	lkMesh := renderContext.liveKitMesh
+
+	gateway := createEnvoyLiveKitIngressGateway(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, gateway, r.scheme); err != nil {
+		log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(gateway))
+		return
+	}
+
+	renderContext.update.UpsertQueue.Gateways.Upsert(gateway)
+	log.V(2).Info("Upserted Envoy LiveKit Ingress Gateway into UpsertQueue", "gw", store.GetObjectKey(gateway))
 }

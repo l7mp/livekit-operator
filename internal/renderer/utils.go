@@ -36,15 +36,15 @@ func mergeMaps(maps ...map[string]string) map[string]string {
 	return mergedMap
 }
 
-func ServiceNameFormat(lkMeshName string) string {
+func getLiveKitServiceName(lkMeshName string) string {
 	return fmt.Sprintf("%s-service", lkMeshName)
 }
 
-func ConfigMapNameFormat(lkDeploymentName string) string {
+func getLiveKitServerConfigMapName(lkDeploymentName string) string {
 	return fmt.Sprintf("%s-config", lkDeploymentName)
 }
 
-func RedisNameFormat(lkMeshName string) string {
+func getRedisName(lkMeshName string) string {
 	return fmt.Sprintf("%s-redis", lkMeshName)
 }
 
@@ -86,24 +86,36 @@ func getEnvoyGatewayClassName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gatewayclass")
 }
 
-func getEnvoyGatewayName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway")
+func getEnvoyLiveKitServerGatewayName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "server-envoy-gateway")
 }
 
-func getEnvoyGatewayListenerName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway-https")
+func getEnvoyLiveKitServerGatewayListenerName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "server-envoy-gateway-https")
 }
 
-func getEnvoyGatewayListenerSecretName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-gateway-https-secret")
+func getEnvoyLiveKitServerGatewayListenerSecretName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "server-envoy-gateway-https-secret")
 }
 
-func getEnvoyHTTPRouteName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "envoy-httproute")
+func getEnvoyLiveKitServerHTTPRouteName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "server-envoy-httproute")
 }
 
 func getHostNameWithSubDomain(subDomain string, hostName string) string {
 	return fmt.Sprintf("%s.%s", subDomain, hostName)
+}
+
+func getEnvoyLiveKitIngressGatewayName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "ingress-envoy-gateway")
+}
+
+func getEnvoyLiveKitServerTCPRouteName(lkMeshName string) string {
+	return fmt.Sprintf("%s-%s", lkMeshName, "ingress-envoy-tcproute")
+}
+
+func getEnvoyLiveKitIngressGatewayListenerName(lkMeshName string, mode string) string {
+	return fmt.Sprintf("%s-%s-%s", lkMeshName, "ingress-envoy-gateway-tcp", mode)
 }
 
 // Network related utils
@@ -134,4 +146,10 @@ func getExternalDNSClusterRoleName(name string, namespace string) string {
 
 func getExternalDNSClusterRoleBindingName(name string, namespace string) string {
 	return fmt.Sprintf("%s-%s-external-dns-role-binding", namespace, name)
+}
+
+// Ingress related utils
+
+func getIngressName(name string) string {
+	return fmt.Sprintf("%s-ingress", name)
 }

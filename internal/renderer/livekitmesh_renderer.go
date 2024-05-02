@@ -30,6 +30,8 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 
 			r.renderExternalDNSResources(renderContext)
 
+			r.renderLiveKitIngressResources(renderContext)
+
 			log.Info("event to channel")
 			r.operatorCh <- renderContext.update
 		}
@@ -54,6 +56,10 @@ func (r *Renderer) renderEnvoyGatewayResources(renderContext *RenderContext) {
 	r.renderEnvoyGatewayClass(renderContext)
 	r.renderEnvoyGateway(renderContext)
 	r.renderEnvoyHTTPRouteForLiveKitServer(renderContext)
+	if renderContext.liveKitMesh.Spec.Components.Ingress != nil {
+		r.renderEnvoyGatewayForLiveKitIngress(renderContext)
+		r.renderEnvoyHTTPRouteForLiveKitIngress(renderContext)
+	}
 }
 
 func (r *Renderer) renderExternalDNSResources(renderContext *RenderContext) {
@@ -69,4 +75,12 @@ func (r *Renderer) renderExternalDNSResources(renderContext *RenderContext) {
 
 func (r *Renderer) renderCertManagerComponentResources(renderContext *RenderContext) {
 	r.renderCertManagerIssuerAndSecret(renderContext)
+}
+
+func (r *Renderer) renderLiveKitIngressResources(renderContext *RenderContext) {
+	if renderContext.liveKitMesh.Spec.Components.Ingress != nil {
+		r.renderLiveKitIngressConfigMap(renderContext)
+		r.renderLiveKitIngressDeployment(renderContext)
+		r.renderLiveKitIngressService(renderContext)
+	}
 }
