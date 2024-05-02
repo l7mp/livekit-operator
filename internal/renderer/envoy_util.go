@@ -100,6 +100,38 @@ func createEnvoyGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 		},
 		Status: gwapiv1.GatewayStatus{},
 	}
+	if lkMesh.Spec.Components.Ingress != nil {
+		gw.Spec.Listeners = append(gw.Spec.Listeners,
+			gwapiv1.Listener{
+				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "rtmp")),
+				Protocol: gwapiv1.TLSProtocolType,
+				Hostname: &hostName,
+				Port:     gwapiv1.PortNumber(1935),
+				TLS: &gwapiv1.GatewayTLSConfig{
+					Mode: &mode,
+					CertificateRefs: []gwapiv1.SecretObjectReference{{
+						Kind:      &kind,
+						Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
+						Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
+					}},
+				},
+			},
+			gwapiv1.Listener{
+				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "whip")),
+				Protocol: gwapiv1.TLSProtocolType,
+				Hostname: &hostName,
+				Port:     gwapiv1.PortNumber(8080),
+				TLS: &gwapiv1.GatewayTLSConfig{
+					Mode: &mode,
+					CertificateRefs: []gwapiv1.SecretObjectReference{{
+						Kind:      &kind,
+						Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
+						Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
+					}},
+				},
+			},
+		)
+	}
 
 	return gw
 }
@@ -262,7 +294,8 @@ func createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh *lkstnv1a1.LiveKitMesh) *gwapi
 		labels = mergeMaps(labels, current.Labels)
 	}
 
-	parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitIngressGatewayName(lkMesh.Name))
+	//parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitIngressGatewayName(lkMesh.Name))
+	parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayName(lkMesh.Name))
 	specifiedHostName := getHostNameWithSubDomain("ingress", *lkMesh.Spec.Components.ApplicationExpose.HostName)
 
 	backendRefSvcName := getIngressName(lkMesh.Name)
@@ -326,7 +359,7 @@ func createEnvoyLiveKitIngressTCPRouteWhip(lkMesh *lkstnv1a1.LiveKitMesh) *gwapi
 		labels = mergeMaps(labels, current.Labels)
 	}
 
-	parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitIngressGatewayName(lkMesh.Name))
+	parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayName(lkMesh.Name))
 	specifiedHostName := getHostNameWithSubDomain("ingress", *lkMesh.Spec.Components.ApplicationExpose.HostName)
 
 	backendRefSvcName := getIngressName(lkMesh.Name)
