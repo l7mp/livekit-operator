@@ -110,8 +110,8 @@ func getEnvoyLiveKitIngressGatewayName(lkMeshName string) string {
 	return fmt.Sprintf("%s-%s", lkMeshName, "ingress-envoy-gateway")
 }
 
-func getEnvoyLiveKitServerTCPRouteName(lkMeshName string) string {
-	return fmt.Sprintf("%s-%s", lkMeshName, "ingress-envoy-tcproute")
+func getEnvoyLiveKitServerTCPRouteName(lkMeshName string, mode string) string {
+	return fmt.Sprintf("%s-%s-%s", lkMeshName, "ingress-envoy-tcproute", mode)
 }
 
 func getEnvoyLiveKitIngressGatewayListenerName(lkMeshName string, mode string) string {

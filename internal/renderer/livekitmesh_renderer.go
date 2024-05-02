@@ -58,7 +58,7 @@ func (r *Renderer) renderEnvoyGatewayResources(renderContext *RenderContext) {
 	r.renderEnvoyHTTPRouteForLiveKitServer(renderContext)
 	if renderContext.liveKitMesh.Spec.Components.Ingress != nil {
 		r.renderEnvoyGatewayForLiveKitIngress(renderContext)
-		r.renderEnvoyHTTPRouteForLiveKitIngress(renderContext)
+		r.renderEnvoyTCPRoutesForLiveKitIngress(renderContext)
 	}
 }
 

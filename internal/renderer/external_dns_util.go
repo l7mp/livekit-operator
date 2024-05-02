@@ -28,6 +28,7 @@ func createExternalDNSCloudFlareDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv
 
 	argList = append(argList,
 		"--source=gateway-httproute",
+		"--source=gateway-tcproute",
 		"--provider=cloudflare",
 		"--cloudflare-dns-records-per-page=1000",
 		fmt.Sprintf("--namespace=%s", lkMesh.Namespace),
@@ -65,7 +66,7 @@ func createExternalDNSCloudFlareDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv
 					ServiceAccountName: getExternalDNSServiceAccountName(lkMesh.Name),
 					Containers: []corev1.Container{{
 						Name:  getExternalDNSDeploymentName(lkMesh.Name),
-						Image: "registry.k8s.io/external-dns/external-dns:v0.14.0",
+						Image: "registry.k8s.io/external-dns/external-dns:v0.14.1",
 						Args:  argList,
 						Env:   envList,
 					},
@@ -106,7 +107,7 @@ func createExternalDNSClusterRole(lkMesh *lkstnv1a1.LiveKitMesh) *rbacv1.Cluster
 		},
 		Rules: []rbacv1.PolicyRule{{
 			APIGroups: []string{"gateway.networking.k8s.io"},
-			Resources: []string{"gateways", "httproutes"},
+			Resources: []string{"gateways", "httproutes", "tcproutes"},
 			Verbs:     []string{"get", "list", "watch"},
 		},
 			{

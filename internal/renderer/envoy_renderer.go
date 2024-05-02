@@ -60,23 +60,33 @@ func (r *Renderer) renderEnvoyHTTPRouteForLiveKitServer(renderContext *RenderCon
 	log.V(2).Info("Upserted Envoy HTTPRoute into UpsertQueue", "httproute", store.GetObjectKey(httpRoute))
 }
 
-func (r *Renderer) renderEnvoyHTTPRouteForLiveKitIngress(renderContext *RenderContext) {
-	log := r.logger.WithName("renderEnvoyHTTPRouteForLiveKitIngress")
+func (r *Renderer) renderEnvoyTCPRoutesForLiveKitIngress(renderContext *RenderContext) {
+	log := r.logger.WithName("renderEnvoyTCPRoutesForLiveKitIngress")
 
-	log.V(2).Info("trying to render Envoy LiveKitIngress HTTPPRoute")
+	log.V(2).Info("trying to render Envoy LiveKitIngress TCPRoute")
 	lkMesh := renderContext.liveKitMesh
 
-	//httpRoute := createEnvoyTCPRoute(lkMesh)
-	httpRoute := createEnvoyLiveKitIngressHTTPRoute(lkMesh)
-	if err := controllerutil.SetOwnerReference(lkMesh, httpRoute, r.scheme); err != nil {
+	rtmpTcpRoute := createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, rtmpTcpRoute, r.scheme); err != nil {
 		log.Error(err, "cannot set owner reference", "owner",
 			store.GetObjectKey(lkMesh), "reference",
-			store.GetObjectKey(httpRoute))
+			store.GetObjectKey(rtmpTcpRoute))
 		return
 	}
 
-	renderContext.update.UpsertQueue.HTTPRoutes.Upsert(httpRoute)
-	log.V(2).Info("Upserted Envoy HTTPPRoute into UpsertQueue", "httproute", store.GetObjectKey(httpRoute))
+	renderContext.update.UpsertQueue.TCPRoutes.Upsert(rtmpTcpRoute)
+	log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(rtmpTcpRoute))
+
+	whipTcpRoute := createEnvoyLiveKitIngressTCPRouteWhip(lkMesh)
+	if err := controllerutil.SetOwnerReference(lkMesh, whipTcpRoute, r.scheme); err != nil {
+		log.Error(err, "cannot set owner reference", "owner",
+			store.GetObjectKey(lkMesh), "reference",
+			store.GetObjectKey(whipTcpRoute))
+		return
+	}
+
+	renderContext.update.UpsertQueue.TCPRoutes.Upsert(whipTcpRoute)
+	log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(whipTcpRoute))
 }
 
 func (r *Renderer) renderEnvoyGatewayForLiveKitIngress(renderContext *RenderContext) {

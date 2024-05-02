@@ -25,6 +25,7 @@ import (
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwapiv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	"time"
 
 	"go.uber.org/zap/zapcore"
@@ -59,6 +60,7 @@ func init() {
 
 	utilruntime.Must(livekitstunnerl7mpiov1alpha1.AddToScheme(scheme))
 	utilruntime.Must(gwapiv1.AddToScheme(scheme))
+	utilruntime.Must(gwapiv1a2.AddToScheme(scheme))
 	utilruntime.Must(stnrgwv1.AddToScheme(scheme))
 	utilruntime.Must(cert.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
