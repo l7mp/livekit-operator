@@ -220,39 +220,26 @@ type Issuer struct {
 	ApiToken *string `json:"apiToken"`
 }
 
-type IngressConfigs struct {
+type Rtmp struct {
+	Port *int `yaml:"port" json:"port,omitempty"`
+}
 
-	// InputType decides whether the user wants to use RTMP (0) or  WHIP (1) as the input type of the ingress
-	// +kubebuilder:validation:Enum=0;1;2
-	InputType *int `yaml:"inputType" json:"inputType"`
-
-	// RoomName is the name of the room to connect to
-	// +kubebuilder:validation:Required
-	RoomName *string `yaml:"roomName" json:"roomName"`
-
-	// ParticipantIdentity is the unique identity for the room participant the Ingress service will connect as
-	// +kubebuilder:validation:Required
-	ParticipantIdentity *string `yaml:"participantIdentity" json:"participantIdentity"`
-
-	// ParticipantName is the Name displayed in the room for the participant
-	// +kubebuilder:validation:Required
-	ParticipantName *string `yaml:"participantName" json:"participantName"`
-
-	// BypassTranscoding for WHIP ingress only, disables transcoding and simulcast
-	// +optional
-	BypassTranscoding *bool `yaml:"bypassTranscoding" json:"bypassTranscoding"`
-
-	// URL is the source URL of the file
-	URL *string `yaml:"url" json:"url,omitempty"`
+type Whip struct {
+	Port *int `yaml:"port" json:"port,omitempty"`
 }
 
 // Ingress is the LiveKit tool not the gateway resource to ingest traffic into the cluster
 type Ingress struct {
 
-	// IngressConfigs is a list of ingress configurations.
-	// See more: https://docs.livekit.io/egress-ingress/ingress/overview/#CreateIngress
-	// +optional
-	IngressConfigs []IngressConfigs `yaml:"ingressConfigs" json:"ingressConfigs"`
+	// Rtmp holds the configuration for the RTMP service
+	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, tcp route) will be created.
+	// If omitted completely no resources will be created for it.
+	Rtmp *Rtmp `yaml:"rtmp" json:"rtmp,omitempty"`
+
+	// Whip holds the configuration for the WHIP service
+	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, http route) will be created.
+	// If omitted completely no resources will be created for it.
+	Whip *Whip `yaml:"whip" json:"whip,omitempty"`
 }
 
 type Egress struct {

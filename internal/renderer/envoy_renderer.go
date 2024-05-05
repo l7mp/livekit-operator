@@ -66,43 +66,48 @@ func (r *Renderer) renderEnvoyTCPRoutesForLiveKitIngress(renderContext *RenderCo
 	log.V(2).Info("trying to render Envoy LiveKitIngress TCPRoute")
 	lkMesh := renderContext.liveKitMesh
 
-	rtmpTcpRoute := createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh)
-	if err := controllerutil.SetOwnerReference(lkMesh, rtmpTcpRoute, r.scheme); err != nil {
-		log.Error(err, "cannot set owner reference", "owner",
-			store.GetObjectKey(lkMesh), "reference",
-			store.GetObjectKey(rtmpTcpRoute))
-		return
+	if renderContext.liveKitMesh.Spec.Components.Ingress.Rtmp != nil {
+		rtmpTcpRoute := createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh)
+		if err := controllerutil.SetOwnerReference(lkMesh, rtmpTcpRoute, r.scheme); err != nil {
+			log.Error(err, "cannot set owner reference", "owner",
+				store.GetObjectKey(lkMesh), "reference",
+				store.GetObjectKey(rtmpTcpRoute))
+			return
+		}
+
+		renderContext.update.UpsertQueue.TCPRoutes.Upsert(rtmpTcpRoute)
+		log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(rtmpTcpRoute))
 	}
 
-	renderContext.update.UpsertQueue.TCPRoutes.Upsert(rtmpTcpRoute)
-	log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(rtmpTcpRoute))
+	if renderContext.liveKitMesh.Spec.Components.Ingress.Whip != nil {
+		// FIXME change this tcp route to HTTP route
+		whipTcpRoute := createEnvoyLiveKitIngressTCPRouteWhip(lkMesh)
+		if err := controllerutil.SetOwnerReference(lkMesh, whipTcpRoute, r.scheme); err != nil {
+			log.Error(err, "cannot set owner reference", "owner",
+				store.GetObjectKey(lkMesh), "reference",
+				store.GetObjectKey(whipTcpRoute))
+			return
+		}
 
-	whipTcpRoute := createEnvoyLiveKitIngressTCPRouteWhip(lkMesh)
-	if err := controllerutil.SetOwnerReference(lkMesh, whipTcpRoute, r.scheme); err != nil {
-		log.Error(err, "cannot set owner reference", "owner",
-			store.GetObjectKey(lkMesh), "reference",
-			store.GetObjectKey(whipTcpRoute))
-		return
+		renderContext.update.UpsertQueue.TCPRoutes.Upsert(whipTcpRoute)
+		log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(whipTcpRoute))
 	}
-
-	renderContext.update.UpsertQueue.TCPRoutes.Upsert(whipTcpRoute)
-	log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(whipTcpRoute))
 }
 
-func (r *Renderer) renderEnvoyGatewayForLiveKitIngress(renderContext *RenderContext) {
-	log := r.logger.WithName("renderEnvoyGatewayForLiveKitIngress")
-
-	log.V(2).Info("trying to render Envoy LiveKitIngress Gateway")
-	lkMesh := renderContext.liveKitMesh
-
-	gateway := createEnvoyLiveKitIngressGateway(lkMesh)
-	if err := controllerutil.SetOwnerReference(lkMesh, gateway, r.scheme); err != nil {
-		log.Error(err, "cannot set owner reference", "owner",
-			store.GetObjectKey(lkMesh), "reference",
-			store.GetObjectKey(gateway))
-		return
-	}
-
-	renderContext.update.UpsertQueue.Gateways.Upsert(gateway)
-	log.V(2).Info("Upserted Envoy LiveKit Ingress Gateway into UpsertQueue", "gw", store.GetObjectKey(gateway))
-}
+//func (r *Renderer) renderEnvoyGatewayForLiveKitIngress(renderContext *RenderContext) {
+//	log := r.logger.WithName("renderEnvoyGatewayForLiveKitIngress")
+//
+//	log.V(2).Info("trying to render Envoy LiveKitIngress Gateway")
+//	lkMesh := renderContext.liveKitMesh
+//
+//	gateway := createEnvoyLiveKitIngressGateway(lkMesh)
+//	if err := controllerutil.SetOwnerReference(lkMesh, gateway, r.scheme); err != nil {
+//		log.Error(err, "cannot set owner reference", "owner",
+//			store.GetObjectKey(lkMesh), "reference",
+//			store.GetObjectKey(gateway))
+//		return
+//	}
+//
+//	renderContext.update.UpsertQueue.Gateways.Upsert(gateway)
+//	log.V(2).Info("Upserted Envoy LiveKit Ingress Gateway into UpsertQueue", "gw", store.GetObjectKey(gateway))
+//}

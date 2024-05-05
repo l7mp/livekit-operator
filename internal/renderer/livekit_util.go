@@ -46,11 +46,18 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 			Address: &redisAddress,
 		}
 	}
-	if lkMesh.Spec.Components.Ingress != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
-		rtmp := fmt.Sprintf("rtmps://ingress.%s:1935", *lkMesh.Spec.Components.ApplicationExpose.HostName)
-		whip := fmt.Sprintf("https://ingress.%s/whip", *lkMesh.Spec.Components.ApplicationExpose.HostName)
-		config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+	if lkMesh.Spec.Components.Ingress.Rtmp != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
+		rtmp := fmt.Sprintf("rtmps://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, lkMesh.Spec.Components.Ingress.Rtmp.Port)
+		if config.IngressAddresses == nil {
+			config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+		}
 		config.IngressAddresses.RtmpBaseUrl = ptr.To(rtmp)
+	}
+	if lkMesh.Spec.Components.Ingress.Whip != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
+		whip := fmt.Sprintf("https://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, lkMesh.Spec.Components.Ingress.Whip.Port)
+		if config.IngressAddresses == nil {
+			config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+		}
 		config.IngressAddresses.WhipBaseUrl = ptr.To(whip)
 	}
 

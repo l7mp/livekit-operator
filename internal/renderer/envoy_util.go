@@ -100,13 +100,13 @@ func createEnvoyGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 		},
 		Status: gwapiv1.GatewayStatus{},
 	}
-	if lkMesh.Spec.Components.Ingress != nil {
+	if lkMesh.Spec.Components.Ingress.Rtmp != nil {
 		gw.Spec.Listeners = append(gw.Spec.Listeners,
 			gwapiv1.Listener{
 				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "rtmp")),
 				Protocol: gwapiv1.TLSProtocolType,
 				Hostname: &hostName,
-				Port:     gwapiv1.PortNumber(1935),
+				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Rtmp.Port),
 				TLS: &gwapiv1.GatewayTLSConfig{
 					Mode: &mode,
 					CertificateRefs: []gwapiv1.SecretObjectReference{{
@@ -115,12 +115,15 @@ func createEnvoyGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 						Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
 					}},
 				},
-			},
+			})
+	}
+	if lkMesh.Spec.Components.Ingress.Whip != nil {
+		gw.Spec.Listeners = append(gw.Spec.Listeners,
 			gwapiv1.Listener{
 				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "whip")),
 				Protocol: gwapiv1.TLSProtocolType,
 				Hostname: &hostName,
-				Port:     gwapiv1.PortNumber(8080),
+				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Whip.Port),
 				TLS: &gwapiv1.GatewayTLSConfig{
 					Mode: &mode,
 					CertificateRefs: []gwapiv1.SecretObjectReference{{
@@ -205,76 +208,76 @@ func createEnvoyHTTPRoute(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.HTTPRoute {
 	}
 }
 
-func createEnvoyLiveKitIngressGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
-
-	name := getEnvoyLiveKitIngressGatewayName(lkMesh.Name)
-	labels := map[string]string{
-		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-		opdefault.RelatedComponent:      opdefault.ComponentApplicationExpose,
-	}
-
-	if current := store.Gateways.GetObject(types.NamespacedName{
-		Namespace: lkMesh.Namespace,
-		Name:      name,
-	}); current != nil {
-		labels = mergeMaps(labels, current.Labels)
-	}
-	hostName := gwapiv1.Hostname(getHostNameWithSubDomain("ingress", *lkMesh.Spec.Components.ApplicationExpose.HostName))
-	mode := gwapiv1.TLSModeTerminate
-	kind := gwapiv1.Kind("Secret")
-
-	return &gwapiv1.Gateway{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: lkMesh.GetNamespace(),
-			Labels:    labels,
-			Annotations: map[string]string{
-				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
-					Namespace: lkMesh.GetNamespace(),
-					Name:      lkMesh.GetName(),
-				}.String(),
-				"cert-manager.io/issuer":        "cloudflare-issuer",
-				opdefault.HostnameAnnotationKey: string(hostName),
-			},
-		},
-		Spec: gwapiv1.GatewaySpec{
-			GatewayClassName: gwapiv1.ObjectName(getEnvoyGatewayClassName(lkMesh.Name)),
-			Listeners: []gwapiv1.Listener{
-				{
-					Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "rtmp")),
-					Protocol: gwapiv1.TLSProtocolType,
-					Hostname: &hostName,
-					Port:     gwapiv1.PortNumber(1935),
-					TLS: &gwapiv1.GatewayTLSConfig{
-						Mode: &mode,
-						CertificateRefs: []gwapiv1.SecretObjectReference{{
-							Kind:      &kind,
-							Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
-							Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
-						},
-						},
-					},
-				},
-				{
-					Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "whip")),
-					Protocol: gwapiv1.TLSProtocolType,
-					Hostname: &hostName,
-					Port:     gwapiv1.PortNumber(8080),
-					TLS: &gwapiv1.GatewayTLSConfig{
-						Mode: &mode,
-						CertificateRefs: []gwapiv1.SecretObjectReference{{
-							Kind:      &kind,
-							Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
-							Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
-						},
-						},
-					},
-				},
-			},
-		},
-	}
-}
+//func createEnvoyLiveKitIngressGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
+//
+//	name := getEnvoyLiveKitIngressGatewayName(lkMesh.Name)
+//	labels := map[string]string{
+//		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
+//		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
+//		opdefault.RelatedComponent:      opdefault.ComponentApplicationExpose,
+//	}
+//
+//	if current := store.Gateways.GetObject(types.NamespacedName{
+//		Namespace: lkMesh.Namespace,
+//		Name:      name,
+//	}); current != nil {
+//		labels = mergeMaps(labels, current.Labels)
+//	}
+//	hostName := gwapiv1.Hostname(getHostNameWithSubDomain("ingress", *lkMesh.Spec.Components.ApplicationExpose.HostName))
+//	mode := gwapiv1.TLSModeTerminate
+//	kind := gwapiv1.Kind("Secret")
+//
+//	return &gwapiv1.Gateway{
+//		ObjectMeta: metav1.ObjectMeta{
+//			Name:      name,
+//			Namespace: lkMesh.GetNamespace(),
+//			Labels:    labels,
+//			Annotations: map[string]string{
+//				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
+//					Namespace: lkMesh.GetNamespace(),
+//					Name:      lkMesh.GetName(),
+//				}.String(),
+//				"cert-manager.io/issuer":        "cloudflare-issuer",
+//				opdefault.HostnameAnnotationKey: string(hostName),
+//			},
+//		},
+//		Spec: gwapiv1.GatewaySpec{
+//			GatewayClassName: gwapiv1.ObjectName(getEnvoyGatewayClassName(lkMesh.Name)),
+//			Listeners: []gwapiv1.Listener{
+//				{
+//					Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "rtmp")),
+//					Protocol: gwapiv1.TLSProtocolType,
+//					Hostname: &hostName,
+//					Port:     gwapiv1.PortNumber(1935),
+//					TLS: &gwapiv1.GatewayTLSConfig{
+//						Mode: &mode,
+//						CertificateRefs: []gwapiv1.SecretObjectReference{{
+//							Kind:      &kind,
+//							Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
+//							Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
+//						},
+//						},
+//					},
+//				},
+//				{
+//					Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "whip")),
+//					Protocol: gwapiv1.TLSProtocolType,
+//					Hostname: &hostName,
+//					Port:     gwapiv1.PortNumber(8080),
+//					TLS: &gwapiv1.GatewayTLSConfig{
+//						Mode: &mode,
+//						CertificateRefs: []gwapiv1.SecretObjectReference{{
+//							Kind:      &kind,
+//							Name:      gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayListenerSecretName(lkMesh.Name)),
+//							Namespace: ptr.To(gwapiv1.Namespace(lkMesh.Namespace)),
+//						},
+//						},
+//					},
+//				},
+//			},
+//		},
+//	}
+//}
 
 func createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1a2.TCPRoute {
 

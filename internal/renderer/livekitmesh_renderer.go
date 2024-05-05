@@ -24,7 +24,7 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 
 			r.renderLiveKitComponentResources(renderContext)
 
-			r.renderCertManagerComponentResources(renderContext)
+			r.renderCertManagerResources(renderContext)
 
 			r.renderEnvoyGatewayResources(renderContext)
 
@@ -73,7 +73,7 @@ func (r *Renderer) renderExternalDNSResources(renderContext *RenderContext) {
 	}
 }
 
-func (r *Renderer) renderCertManagerComponentResources(renderContext *RenderContext) {
+func (r *Renderer) renderCertManagerResources(renderContext *RenderContext) {
 	r.renderCertManagerIssuerAndSecret(renderContext)
 }
 
