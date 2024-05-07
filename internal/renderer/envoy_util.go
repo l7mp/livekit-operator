@@ -290,14 +290,13 @@ func createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh *lkstnv1a1.LiveKitMesh) *gwapi
 		opdefault.RelatedComponent:      opdefault.ComponentApplicationExpose,
 	}
 
-	if current := store.HTTPRoutes.GetObject(types.NamespacedName{
+	if current := store.TCPRoutes.GetObject(types.NamespacedName{
 		Namespace: lkMesh.Namespace,
 		Name:      name,
 	}); current != nil {
 		labels = mergeMaps(labels, current.Labels)
 	}
 
-	//parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitIngressGatewayName(lkMesh.Name))
 	parentRefObjectName := gwapiv1.ObjectName(getEnvoyLiveKitServerGatewayName(lkMesh.Name))
 	specifiedHostName := getHostNameWithSubDomain("ingress", *lkMesh.Spec.Components.ApplicationExpose.HostName)
 
