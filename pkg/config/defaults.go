@@ -93,19 +93,25 @@ const (
 const (
 	//STUNNER
 
+	// InstallStunnerGatewayChart is the default value to install the StunnerGatewayChart
+	InstallStunnerGatewayChart = true
+
 	// StunnerGatewayChartNamespace is the default namespace where the STUNner chart should be deployed
 	StunnerGatewayChartNamespace = "stunner-gateway-system"
 
 	//ENVOY
+
+	// InstallEnvoyGatewayChart is the default value to install the EnvoyGatewayChart
+	InstallEnvoyGatewayChart = true
 
 	// EnvoyGatewayChartNamespace is the default namespace where the Envoy chart should be deployed
 	EnvoyGatewayChartNamespace = "envoy-gateway-system"
 
 	//CERT-MANAGER
 
+	// InstallCertManagerChart is the default value to install the InstallCertManagerChart
+	InstallCertManagerChart = true
+
 	// CertManagerChartNamespace is the default namespace where the Cert-Manager chart should be deployed
 	CertManagerChartNamespace = "cert-manager"
-
-	// ExternalDNSNamespace is the default namespace where the ExternalDNS chart should be deployed
-	ExternalDNSNamespace = "external-dns"
 )

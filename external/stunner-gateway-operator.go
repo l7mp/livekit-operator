@@ -23,8 +23,9 @@ func NewStunnerGatewayOperator() *StunnerGatewayOperator {
 }
 
 func (e *StunnerGatewayOperator) InstallChart(ctx context.Context, logger logr.Logger) error {
-
 	log := logger.WithName("Stunner-GW-operator")
+
+	e.SetInstalled(false)
 
 	chartRepo := repo.Entry{
 		Name: "stunner",
@@ -81,6 +82,7 @@ func (e *StunnerGatewayOperator) InstallChart(ctx context.Context, logger logr.L
 		}
 		if egwRelease.Info.Status == "deployed" {
 			log.Info("chart installed", "release name", egwRelease.Name, "status", egwRelease.Info.Status)
+			e.SetInstalled(true)
 		} else {
 			log.Error(nil, "installation of the Envoy Gateway Operator was NOT successful", "status", egwRelease.Info.Status)
 			err := e.UninstallChart()

@@ -13,11 +13,14 @@ type Chart interface {
 	GetChartSpec() *helmClient.ChartSpec
 	SetClient(client helmClient.Client)
 	GetClient() *helmClient.Client
+	IsInstalled() bool
+	SetInstalled(installed bool)
 }
 
 type chartImpl struct {
 	chartSpec helmClient.ChartSpec
 	client    helmClient.Client
+	installed bool
 }
 
 func NewChartImpl() Chart {
@@ -48,4 +51,12 @@ func (c *chartImpl) SetClient(client helmClient.Client) {
 
 func (c *chartImpl) GetClient() *helmClient.Client {
 	return &c.client
+}
+
+func (c *chartImpl) IsInstalled() bool {
+	return c.installed
+}
+
+func (c *chartImpl) SetInstalled(installed bool) {
+	c.installed = installed
 }

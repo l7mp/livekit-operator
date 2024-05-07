@@ -13,12 +13,18 @@ import (
 
 const channelBufferSize = 200
 
+type ChartInstallConfig struct {
+	ShouldInstallStunnerGatewayChart bool
+	ShouldInstallEnvoyGatewayChart   bool
+	ShouldInstallCertManagerChart    bool
+}
+
 type Config struct {
 	ControllerName      string
 	Manager             manager.Manager
 	RenderCh            chan event.Event
 	UpdaterCh           chan event.Event
-	ShouldInstallCharts bool
+	ShouldInstallCharts ChartInstallConfig
 	Logger              logr.Logger
 }
 
@@ -26,7 +32,7 @@ type Operator struct {
 	ctx                             context.Context
 	mgr                             manager.Manager
 	renderCh, operatorCh, updaterCh chan event.Event
-	shouldInstallCharts             bool
+	shouldInstallCharts             ChartInstallConfig
 	log, logger                     logr.Logger
 }
 
@@ -47,26 +53,31 @@ func (o *Operator) Start(ctx context.Context) error {
 	o.ctx = ctx
 	log.Info("Starting operator")
 
-	if o.shouldInstallCharts {
-		log.Info("start installing Envoy-Gateway")
-		if err := external.EnvoyGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
-			return fmt.Errorf("cannot install Envoy-Gateway operator: %w", err)
-		}
-
-		log.Info("start installing Cert-Manager")
-		if err := external.CertManagerChart.InstallChart(o.ctx, o.logger); err != nil {
-			return fmt.Errorf("cannot install Cert-Manager: %w", err)
-		}
-
+	if o.shouldInstallCharts.ShouldInstallStunnerGatewayChart {
 		log.Info("start installing Stunner-Gateway-Operator")
 		if err := external.StunnerGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
 			return fmt.Errorf("cannot install Stunner-Gateway-Operator: %w", err)
 		}
+	} else {
+		log.Info("NOT installing Stunner-Gateway chart", "cli flag install-stunner-gateway-chart", o.shouldInstallCharts.ShouldInstallStunnerGatewayChart)
+	}
 
-		//log.Info("start installing ExternalDNS")
-		//if err := external.ExternalDNSChart.InstallChart(o.ctx, o.logger); err != nil {
-		//	return fmt.Errorf("cannot install ExternalDNS: %w", err)
-		//}
+	if o.shouldInstallCharts.ShouldInstallEnvoyGatewayChart {
+		log.Info("start installing Envoy-Gateway")
+		if err := external.EnvoyGatewayOperatorChart.InstallChart(o.ctx, o.logger); err != nil {
+			return fmt.Errorf("cannot install Envoy-Gateway operator: %w", err)
+		}
+	} else {
+		log.Info("NOT installing Envoy-Gateway chart", "cli flag install-envoy-gateway-chart", o.shouldInstallCharts.ShouldInstallEnvoyGatewayChart)
+	}
+
+	if o.shouldInstallCharts.ShouldInstallCertManagerChart {
+		log.Info("start installing Cert-Manager")
+		if err := external.CertManagerChart.InstallChart(o.ctx, o.logger); err != nil {
+			return fmt.Errorf("cannot install Cert-Manager: %w", err)
+		}
+	} else {
+		log.Info("NOT installing Cert-Manager chart", "cli flag install-cert-manager-chart", o.shouldInstallCharts.ShouldInstallCertManagerChart)
 	}
 
 	log.Info("starting LiveKitOperator controller")
@@ -102,29 +113,39 @@ func (o *Operator) eventLoop(ctx context.Context) {
 }
 
 func HandleCleanup(ctx context.Context) error {
+	//FIXME error handling https://trstringer.com/concurrent-error-handling-go/
 	log := logr.Logger{}.WithName("Shutdown")
 	<-ctx.Done()
 	log.Info("Shutting down")
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() {
-		err := external.EnvoyGatewayOperatorChart.UninstallChart()
-		if err != nil {
-			log.Info("Error while deleting chart on shutdown")
+		if external.EnvoyGatewayOperatorChart.IsInstalled() {
+			err := external.EnvoyGatewayOperatorChart.UninstallChart()
+			if err != nil {
+				log.Error(err, "error while deleting envoy gateway operator chart on shutdown")
+			}
+			external.EnvoyGatewayOperatorChart.SetInstalled(false)
 		}
 		wg.Done()
 	}()
 	go func() {
-		err := external.CertManagerChart.UninstallChart()
-		if err != nil {
-			log.Info("Error while deleting chart on shutdown")
+		if external.CertManagerChart.IsInstalled() {
+			err := external.CertManagerChart.UninstallChart()
+			if err != nil {
+				log.Error(err, "error while deleting cert manager chart on shutdown")
+			}
+			external.CertManagerChart.SetInstalled(false)
 		}
 		wg.Done()
 	}()
 	go func() {
-		err := external.StunnerGatewayOperatorChart.UninstallChart()
-		if err != nil {
-			log.Info("Error while deleting chart on shutdown")
+		if external.StunnerGatewayOperatorChart.IsInstalled() {
+			err := external.StunnerGatewayOperatorChart.UninstallChart()
+			if err != nil {
+				log.Error(err, "error while deleting stunner gateway operator chart on shutdown")
+			}
+			external.StunnerGatewayOperatorChart.SetInstalled(false)
 		}
 		wg.Done()
 	}()

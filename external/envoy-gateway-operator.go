@@ -21,8 +21,9 @@ func NewEnvoyGatewayOperator() *EnvoyGatewayOperator {
 }
 
 func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Logger) error {
-
 	log := logger.WithName("Envoy-GW")
+
+	e.SetInstalled(false)
 
 	opt := &helmClient.Options{
 		Namespace:        opdefault.EnvoyGatewayChartNamespace, // Change this to the namespace you wish the client to operate in.
@@ -69,6 +70,7 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 		if egwRelease.Info != nil {
 			if egwRelease.Info.Status == "deployed" {
 				log.Info("chart installed", "release name", egwRelease.Name, "status", egwRelease.Info.Status)
+				e.SetInstalled(true)
 			} else {
 				log.Error(nil, "installation of the Envoy Gateway Operator was NOT successful", "status", egwRelease.Info.Status)
 				err := e.UninstallChart()

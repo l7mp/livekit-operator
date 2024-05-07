@@ -145,12 +145,16 @@ var _ = BeforeSuite(func() {
 
 	setupLog.Info("setting up operator")
 	op := operator.NewOperator(operator.Config{
-		ControllerName:      opdefault.DefaultControllerName,
-		Manager:             k8sManager,
-		RenderCh:            r.GetRenderChannel(),
-		UpdaterCh:           u.GetUpdaterChannel(),
-		ShouldInstallCharts: false,
-		Logger:              ctrl.Log,
+		ControllerName: opdefault.DefaultControllerName,
+		Manager:        k8sManager,
+		RenderCh:       r.GetRenderChannel(),
+		UpdaterCh:      u.GetUpdaterChannel(),
+		ShouldInstallCharts: operator.ChartInstallConfig{
+			ShouldInstallStunnerGatewayChart: true,
+			ShouldInstallEnvoyGatewayChart:   true,
+			ShouldInstallCertManagerChart:    true,
+		},
+		Logger: ctrl.Log,
 	})
 	Expect(op).NotTo(BeNil())
 
@@ -238,7 +242,7 @@ var _ = Describe("Integration test:", func() {
 		/*		It("should render configmap", func() {
 					lookUpKey := types.NamespacedName{
 						Namespace: testutils.TestNsName,
-						Name:      renderer.ConfigMapNameFormat(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
+						Name:      renderer.getLiveKitServerConfigMapName(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
 					}
 
 					cm := &corev1.ConfigMap{}
@@ -274,7 +278,7 @@ var _ = Describe("Integration test:", func() {
 				It("should render service", func() {
 					lookUpKey := types.NamespacedName{
 						Namespace: testutils.TestNsName,
-						Name:      renderer.ServiceNameFormat(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
+						Name:      renderer.getLiveKitServiceName(*testutils.TestLkMesh.Spec.Components.LiveKit.Deployment.Name),
 					}
 
 					svc := &corev1.Service{}
@@ -305,7 +309,7 @@ var _ = Describe("Integration test:", func() {
 						return nil
 					}, timeout, interval).Should(BeTrue())
 
-					Expect(issuer.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentCertManager))
+					Expect(issuer.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentApplicationExpose))
 
 					lookUpKey = types.NamespacedName{
 						Namespace: testutils.TestNsName,
@@ -321,7 +325,7 @@ var _ = Describe("Integration test:", func() {
 						return nil
 					}, timeout, interval).Should(BeTrue())
 
-					Expect(secret.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentCertManager))
+					Expect(secret.Labels[opdefault.RelatedComponent]).To(Equal(opdefault.ComponentApplicationExpose))
 
 				})*/
 

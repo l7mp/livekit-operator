@@ -23,8 +23,9 @@ func NewCertManager() *CertManager {
 }
 
 func (e *CertManager) InstallChart(ctx context.Context, logger logr.Logger) error {
-
 	log := logger.WithName("Cert-Manager")
+
+	e.SetInstalled(false)
 
 	chartRepo := repo.Entry{
 		Name: "jetstack",
@@ -81,6 +82,7 @@ func (e *CertManager) InstallChart(ctx context.Context, logger logr.Logger) erro
 		}
 		if egwRelease.Info.Status == "deployed" {
 			log.Info("chart installed", "release name", egwRelease.Name, "status", egwRelease.Info.Status)
+			e.SetInstalled(true)
 		} else {
 			log.Error(nil, "installation of the chart was NOT successful", "release name", egwRelease.Name, "status", egwRelease.Info.Status)
 			err := e.UninstallChart()

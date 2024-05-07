@@ -69,6 +69,7 @@ func init() {
 func main() {
 	var metricsAddr, probeAddr, controllerName string
 	var enableLeaderElection bool
+	var shouldInstallStunnerGatewayChart, shouldInstallEnvoyGatewayChart, shouldInstallCertManagerChart bool
 
 	flag.StringVar(&controllerName, "controller-name", opdefault.DefaultControllerName,
 		"The controller name to be used in the GatewayClass resource to bind it to this operator.")
@@ -77,6 +78,13 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&shouldInstallStunnerGatewayChart, "install-stunner-gateway-chart", opdefault.InstallStunnerGatewayChart,
+		"Set to false to not install stunner-gateway-operator chart. Defaults to true.")
+	flag.BoolVar(&shouldInstallEnvoyGatewayChart, "install-envoy-gateway-chart", opdefault.InstallEnvoyGatewayChart,
+		"Set to false to not install envoy-gateway chart. Defaults to true.")
+	flag.BoolVar(&shouldInstallCertManagerChart, "install-cert-manager-chart", opdefault.InstallCertManagerChart,
+		"Set to false to install cert-manager chart. Defaults to true.")
+
 	opts := zap.Options{
 		Development: true,
 	}
@@ -99,15 +107,13 @@ func main() {
 		LeaderElectionID:        "0386a07e.l7mp.io",
 		GracefulShutdownTimeout: &gracefulShutdown,
 	})
+	if err != nil {
+		panic(fmt.Sprintf("Fail to init manager: %v", err))
+	}
 
 	// Add your custom runnable to the manager.
 	if err := mgr.Add(manager.RunnableFunc(operator.HandleCleanup)); err != nil {
 		panic(fmt.Sprintf("Failed to add runnable: %v", err))
-	}
-
-	if err != nil {
-		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
 	}
 
 	setupLog.Info("setting up renderer")
@@ -125,12 +131,16 @@ func main() {
 
 	setupLog.Info("setting up operator")
 	op := operator.NewOperator(operator.Config{
-		ControllerName:      controllerName,
-		RenderCh:            r.GetRenderChannel(),
-		UpdaterCh:           u.GetUpdaterChannel(),
-		ShouldInstallCharts: true,
-		Manager:             mgr,
-		Logger:              logger,
+		ControllerName: controllerName,
+		RenderCh:       r.GetRenderChannel(),
+		UpdaterCh:      u.GetUpdaterChannel(),
+		ShouldInstallCharts: operator.ChartInstallConfig{
+			ShouldInstallStunnerGatewayChart: shouldInstallStunnerGatewayChart,
+			ShouldInstallEnvoyGatewayChart:   shouldInstallEnvoyGatewayChart,
+			ShouldInstallCertManagerChart:    shouldInstallCertManagerChart,
+		},
+		Manager: mgr,
+		Logger:  logger,
 	})
 
 	r.SetOperatorChannel(op.GetOperatorChannel())
