@@ -4,7 +4,7 @@ import (
 	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/store"
-	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	"github.com/l7mp/livekit-operator/pkg/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,79 +14,50 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-type IngressConfig struct {
-	APIKey         string  `yaml:"api_key" json:"api_key"`
-	APISecret      string  `yaml:"api_secret" json:"api_secret"`
-	CPUCost        CPUCost `yaml:"cpu_cost" json:"cpu_cost"`
-	HealthPort     int     `yaml:"health_port" json:"health_port"`
-	HTTPRelayPort  int     `yaml:"http_relay_port" json:"http_relay_port"`
-	Logging        Logging `yaml:"logging" json:"logging"`
-	PrometheusPort int     `yaml:"prometheus_port" json:"prometheus_port"`
-	Redis          Redis   `yaml:"redis" json:"redis"`
-	RTMPPort       int     `yaml:"rtmp_port" json:"rtmp_port"`
-	WSURL          string  `yaml:"ws_url" json:"ws_url"`
-}
-
-type CPUCost struct {
-	RTMPCPUCost int `yaml:"rtmp_cpu_cost" json:"rtmp_cpu_cost"`
-}
-
-type Logging struct {
-	Level string `yaml:"level" json:"level"`
-}
-
-type Redis struct {
-	Address string `yaml:"address" json:"address"`
-}
-
 func createLiveKitIngressConfigMap(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.ConfigMap, error) {
-	redisAddress := ""
 
+	ingress := lkMesh.Spec.Components.Ingress
+	redis := lkstnv1a1.Redis{}
 	if lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis != nil {
-		redisAddress = *lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis.Address
+		redis = *lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis
 	} else {
-		redisAddress = fmt.Sprintf("%s.%s.%d", getRedisName(lkMesh.Name), lkMesh.Namespace, 6379)
+		redis.Address = ptr.To(fmt.Sprintf("%s.%s:%d", getRedisName(lkMesh.Name), lkMesh.Namespace, 6379))
 	}
 
 	//TODO fix service name
 	wsUrl := fmt.Sprintf("ws://%s.%s:%d", getLiveKitServiceName(*lkMesh.Spec.Components.LiveKit.Deployment.Name), lkMesh.Namespace, 443)
 
-	config := &IngressConfig{
-		APIKey:    "access_token",
-		APISecret: *lkMesh.Spec.Components.LiveKit.Deployment.Config.Keys.AccessToken,
-		CPUCost: CPUCost{
-			RTMPCPUCost: 2,
-		},
-		HealthPort:    7888,
-		HTTPRelayPort: 9090,
-		Logging: Logging{
-			Level: "debug",
-		},
-		PrometheusPort: 7889,
-		Redis: Redis{
-			Address: redisAddress,
-		},
-		RTMPPort: 1935,
-		WSURL:    wsUrl,
+	//get the first key-value
+	apiKey, apiSecret := "", ""
+	for k, v := range *lkMesh.Spec.Components.LiveKit.Deployment.Config.Keys {
+		apiKey = k
+		apiSecret = v
+		break
 	}
 
-	yamlData, err := yaml.Marshal(config)
+	ingressConfig := config.ConvertIngressConfig(*ingress.Config)
+	ingressConfig.APIKey = &apiKey
+	ingressConfig.APISecret = &apiSecret
+	ingressConfig.Redis = &redis
+	ingressConfig.WSURL = &wsUrl
+
+	yamlData, err := yaml.Marshal(ingressConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	yamlMap := make(map[string]string)
-	yamlMap[opdefault.DefaultLiveKitConfigFileName] = string(yamlData)
+	yamlMap[config.DefaultLiveKitConfigFileName] = string(yamlData)
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      getIngressName(lkMesh.Name),
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:             opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey:       lkMesh.GetName(),
-				opdefault.DefaultLabelKeyForConfigMap: opdefault.DefaultLabelValueForConfigMap,
-				opdefault.RelatedComponent:            opdefault.ComponentLiveKit,
+				config.OwnedByLabelKey:             config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey:       lkMesh.GetName(),
+				config.DefaultLabelKeyForConfigMap: config.DefaultLabelValueForConfigMap,
+				config.RelatedComponent:            config.ComponentLiveKit,
 			},
 		},
 		Data: yamlMap,
@@ -98,9 +69,9 @@ func createLiveKitIngressConfigMap(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.Confi
 func createLiveKitIngressService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 
 	labels := map[string]string{
-		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-		opdefault.RelatedComponent:      opdefault.ComponentIngress,
+		config.OwnedByLabelKey:       config.OwnedByLabelValue,
+		config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+		config.RelatedComponent:      config.ComponentIngress,
 	}
 
 	if current := store.Services.GetObject(types.NamespacedName{
@@ -116,7 +87,7 @@ func createLiveKitIngressService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service 
 			Name:      getIngressName(lkMesh.Name),
 			Labels:    labels,
 			Annotations: map[string]string{
-				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
+				config.RelatedLiveKitMeshKey: types.NamespacedName{
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
@@ -175,16 +146,16 @@ func createLiveKitIngressDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deplo
 			Name:      getIngressName(lkMesh.Name),
 			Namespace: lkMesh.Namespace,
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentIngress,
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentIngress,
 			},
 			Annotations: map[string]string{
-				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
+				config.RelatedLiveKitMeshKey: types.NamespacedName{
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
-				opdefault.RelatedConfigMapKey: getIngressName(lkMesh.Name),
+				config.RelatedConfigMapKey: getIngressName(lkMesh.Name),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -202,7 +173,7 @@ func createLiveKitIngressDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deplo
 						"app.kubernetes.io/instance": getIngressName(lkMesh.Name),
 					},
 					Annotations: map[string]string{
-						opdefault.DefaultConfigMapResourceVersionKey: "",
+						config.DefaultConfigMapResourceVersionKey: "",
 					},
 				},
 				Spec: corev1.PodSpec{

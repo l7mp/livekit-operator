@@ -100,13 +100,13 @@ func createEnvoyGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 		},
 		Status: gwapiv1.GatewayStatus{},
 	}
-	if lkMesh.Spec.Components.Ingress.Rtmp != nil {
+	if lkMesh.Spec.Components.Ingress.Config.RTMPPort != nil {
 		gw.Spec.Listeners = append(gw.Spec.Listeners,
 			gwapiv1.Listener{
 				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "rtmp")),
 				Protocol: gwapiv1.TLSProtocolType,
 				Hostname: &hostName,
-				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Rtmp.Port),
+				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Config.RTMPPort),
 				TLS: &gwapiv1.GatewayTLSConfig{
 					Mode: &mode,
 					CertificateRefs: []gwapiv1.SecretObjectReference{{
@@ -117,13 +117,13 @@ func createEnvoyGateway(lkMesh *lkstnv1a1.LiveKitMesh) *gwapiv1.Gateway {
 				},
 			})
 	}
-	if lkMesh.Spec.Components.Ingress.Whip != nil {
+	if lkMesh.Spec.Components.Ingress.Config.WHIPPort != nil {
 		gw.Spec.Listeners = append(gw.Spec.Listeners,
 			gwapiv1.Listener{
 				Name:     gwapiv1.SectionName(getEnvoyLiveKitIngressGatewayListenerName(lkMesh.Name, "whip")),
 				Protocol: gwapiv1.TLSProtocolType,
 				Hostname: &hostName,
-				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Whip.Port),
+				Port:     gwapiv1.PortNumber(*lkMesh.Spec.Components.Ingress.Config.WHIPPort),
 				TLS: &gwapiv1.GatewayTLSConfig{
 					Mode: &mode,
 					CertificateRefs: []gwapiv1.SecretObjectReference{{

@@ -111,7 +111,11 @@ type NamespacedName struct {
 }
 
 type Keys struct {
-	AccessToken *string `yaml:"access_token" json:"access_token,omitempty"`
+	AccessToken *map[string]string `yaml:"access_token" json:"access_token,omitempty"`
+
+	//ApiKey *string `yaml:"api_key" json:"api_key,omitempty"`
+	//
+	//ApiSecret *string `yaml:"api_secret" json:"api_secret,omitempty"`
 }
 
 // Redis holds the configuration for the Redis deployment
@@ -119,32 +123,33 @@ type Keys struct {
 // user deployed Redis deployment is required
 // If it is omitted, a default Redis will be created.
 type Redis struct {
-	Address *string `yaml:"address" json:"address,omitempty"`
+	Address  *string `yaml:"address" json:"address,omitempty"`
+	Username *string `yaml:"username" json:"username,omitempty"`
+	Password *string `yaml:"password" json:"password,omitempty"`
+	Db       *string `yaml:"db" json:"db,omitempty"`
 }
 
 type Rtc struct {
-	PortRangeEnd   *int         `yaml:"port_range_end" json:"port_range_end,omitempty"`
-	PortRangeStart *int         `yaml:"port_range_start" json:"port_range_start,omitempty"`
-	TcpPort        *int         `yaml:"tcp_port" json:"tcp_port,omitempty"`
-	StunServers    []string     `yaml:"stun_servers" json:"stun_servers,omitempty"`
-	TurnServers    []TurnServer `yaml:"turn_servers" json:"turn_servers,omitempty"`
-	// +kubebuilder:default=false
-	// +optional
-	UseExternalIp *bool `yaml:"use_external_ip" json:"use_external_ip,omitempty"`
+	PortRangeEnd   *int `yaml:"port_range_end" json:"port_range_end,omitempty"`
+	PortRangeStart *int `yaml:"port_range_start" json:"port_range_start,omitempty"`
+	TcpPort        *int `yaml:"tcp_port" json:"tcp_port,omitempty"`
 }
 
-type IngressAddresses struct {
-	RtmpBaseUrl *string `json:"rtmp_base_url,omitempty"`
-	WhipBaseUrl *string `json:"whip_base_url,omitempty"`
-}
+//type IngressAddresses struct {
+//	RtmpBaseUrl *string `json:"rtmp_base_url,omitempty"`
+//	WhipBaseUrl *string `json:"whip_base_url,omitempty"`
+//}
 
 type LiveKitConfig struct {
-	Keys             *Keys             `yaml:"keys" json:"keys,omitempty"`
-	LogLevel         *string           `yaml:"log_level" json:"log_level,omitempty"`
-	Port             *int              `yaml:"port" json:"port,omitempty"`
-	Redis            *Redis            `yaml:"redis" json:"redis,omitempty"`
-	Rtc              *Rtc              `yaml:"rtc" json:"rtc,omitempty"`
-	IngressAddresses *IngressAddresses `yaml:"ingress" json:"ingress,omitempty"`
+	Keys     *map[string]string `yaml:"keys" json:"keys,omitempty"`
+	LogLevel *string            `yaml:"log_level" json:"log_level,omitempty"`
+	Port     *int               `yaml:"port" json:"port,omitempty"`
+
+	// Redis in case redis is configured no Redis resources will be created by the operator
+	// The value of this field inherited to the Ingress and Egress config as well
+	Redis *Redis `yaml:"redis" json:"redis,omitempty"`
+	Rtc   *Rtc   `yaml:"rtc" json:"rtc,omitempty"`
+	//IngressAddresses *IngressAddresses `yaml:"ingress" json:"ingress,omitempty"`
 }
 
 type Deployment struct {
@@ -170,12 +175,7 @@ type Deployment struct {
 	// +optional
 	Container *Container `json:"container"`
 
-	// ConfigMap holds the configuration for the livekit server that is executed.
-	// TODO in the future we should make a copy from the configmap into the namespace the lkmesh was deployed to
-	//
-	// +optional
-	ConfigMap *NamespacedName `json:"configMap"`
-
+	// Config holds the configuration for the livekit server
 	Config *LiveKitConfig `json:"config"`
 }
 
@@ -228,22 +228,94 @@ type Whip struct {
 	Port *int `yaml:"port" json:"port,omitempty"`
 }
 
-// Ingress is the LiveKit tool not the gateway resource to ingest traffic into the cluster
-type Ingress struct {
-
+type IngressConfig struct {
+	// +optional
+	CPUCost *CPUCost `yaml:"cpu_cost" json:"cpu_cost"`
+	// +optional
+	HealthPort *int `yaml:"health_port" json:"health_port"`
+	// +optional
+	PrometheusPort *int `yaml:"prometheus_port" json:"prometheus_port"`
 	// Rtmp holds the configuration for the RTMP service
 	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, tcp route) will be created.
 	// If omitted completely no resources will be created for it.
-	Rtmp *Rtmp `yaml:"rtmp" json:"rtmp,omitempty"`
-
+	// +kubebuilder:default=1935
+	// +optional
+	RTMPPort *int `yaml:"rtmp_port" json:"rtmp_port"`
 	// Whip holds the configuration for the WHIP service
 	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, http route) will be created.
 	// If omitted completely no resources will be created for it.
-	Whip *Whip `yaml:"whip" json:"whip,omitempty"`
+	// +kubebuilder:default=8080
+	// +optional
+	WHIPPort *int `yaml:"whip_port" json:"whip_port"`
+	// +optional
+	HTTPRelayPort *int `yaml:"http_relay_port" json:"http_relay_port"`
+	// +optional
+	Logging *Logging `yaml:"logging" json:"logging"`
+}
+
+type CPUCost struct {
+	// +optional
+	RTMPCPUCost *int `yaml:"rtmp_cpu_cost" json:"rtmp_cpu_cost"`
+	// +optional
+	WHIPCPUCost *int `yaml:"whip_cpu_cost" json:"whip_cpu_cost"`
+	// +optional
+	WHIPBypassTranscodingCPUCost *int `yaml:"whip_bypass_transcoding_cpu_cost" json:"whip_bypass_transcoding_cpu_cost"`
+}
+
+type Logging struct {
+	Level string `yaml:"level" json:"level"`
+}
+
+// Ingress is the LiveKit tool not the gateway resource to ingest traffic into the cluster
+type Ingress struct {
+
+	// Config holds configuration for the LiveKit Ingress
+	Config *IngressConfig `yaml:"config" json:"config,omitempty"`
+}
+
+type EgressConfig struct {
+	// +optional
+	HealthPort *int `yaml:"health_port" json:"health_port"`
+	// +optional
+	TemplatePort *int `yaml:"template_port" json:"template_port"`
+	// +optional
+	PrometheusPort *int `yaml:"prometheus_port" json:"prometheus_port"`
+	// +optional
+	LogLevel *string `yaml:"log_level" json:"log_level"`
+	//TemplateBase
+	//EnableChromeSandbox
+	// +optional
+	Insecure *bool `yaml:"insecure" json:"insecure"`
+	// +optional
+	S3 *S3 `yaml:"s3" json:"s3"`
+	// +optional
+	Azure *Azure `yaml:"azure" json:"azure"`
+	// +optional
+	Gcp *Gcp `yaml:"gcp" json:"gcp"`
+}
+
+type S3 struct {
+	AccessKey *string `yaml:"access_key" json:"access_key"`
+	Secret    *string `yaml:"secret" json:"secret"`
+	Region    *string `yaml:"region" json:"region"`
+	Endpoint  *string `yaml:"endpoint" json:"endpoint"`
+	Bucket    *string `yaml:"bucket" json:"bucket"`
+}
+
+type Azure struct {
+	AccountName   *string `yaml:"account_name" json:"account_name"`
+	AccountKey    *string `yaml:"account_key" json:"account_key"`
+	ContainerName *string `yaml:"container_name" json:"container_name"`
+}
+
+type Gcp struct {
+	CredentialsJson *string `yaml:"credentials_json" json:"credentials_json"`
+	Bucket          *string `yaml:"bucket" json:"bucket"`
 }
 
 type Egress struct {
-	//TODO
+	// Config holds configuration for the LiveKit Ingress
+	Config *EgressConfig `yaml:"config" json:"config,omitempty"`
 }
 
 type CertManager struct {

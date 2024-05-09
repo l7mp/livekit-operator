@@ -4,7 +4,7 @@ import (
 	"fmt"
 	lkstnv1a1 "github.com/l7mp/livekit-operator/api/v1alpha1"
 	"github.com/l7mp/livekit-operator/internal/store"
-	opdefault "github.com/l7mp/livekit-operator/pkg/config"
+	"github.com/l7mp/livekit-operator/pkg/config"
 	stnrauthsvc "github.com/l7mp/stunner-auth-service/pkg/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+	neturl "net/url"
 	"sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
@@ -20,65 +21,73 @@ import (
 func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc.IceConfig) (*corev1.ConfigMap, error) {
 	dp := lkMesh.Spec.Components.LiveKit.Deployment
 	name := getLiveKitServerConfigMapName(*dp.Name)
-	config := dp.Config
+	dpConfig := dp.Config
+
+	actualConfig := config.ConvertServerConfig(*dp.Config)
+	actualConfig.Rtc.TurnServers = make([]config.TurnServer, 0)
 
 	//TODO fix the below code, first turn address is taken, others are left there
 	iceServers := *iceConfig.IceServers
+	if len(iceServers) == 0 {
+		return nil, fmt.Errorf("no ice servers found from stunner-auth")
+	}
 	iceAuthenticationToken := iceServers[0]
 	urls := *iceAuthenticationToken.Urls
-	username := *iceAuthenticationToken.Username
-	credential := *iceAuthenticationToken.Credential
-	protocol := "udp"
 	for i, url := range urls {
-		host, port, err := getAddressAndPortFromTurnUrl(url)
+		host, port, proto, err := getAddressAndPortFromTurnUrl(url)
 		if err != nil {
-			return nil, fmt.Errorf("this should only skip the current turn server TODO: %v", err)
+			return nil, fmt.Errorf("failed to get address and port from turn url: %v", err)
+			//continue
 		}
-		config.Rtc.TurnServers[i].Username = &username
-		config.Rtc.TurnServers[i].Credential = &credential
-		config.Rtc.TurnServers[i].Host = host
-		config.Rtc.TurnServers[i].Port = port
-		config.Rtc.TurnServers[i].Protocol = &protocol
+		actualConfig.Rtc.TurnServers = append(actualConfig.Rtc.TurnServers, config.TurnServer{})
+		actualConfig.Rtc.TurnServers[i].Username = ptr.To(*iceAuthenticationToken.Username)
+		actualConfig.Rtc.TurnServers[i].Credential = ptr.To(*iceAuthenticationToken.Credential)
+		actualConfig.Rtc.TurnServers[i].Host = host
+		actualConfig.Rtc.TurnServers[i].Port = port
+		actualConfig.Rtc.TurnServers[i].Protocol = proto
 	}
 	if lkMesh.Spec.Components.LiveKit.Deployment.Config.Redis == nil {
 		redisAddress := fmt.Sprintf("%s.%s.svc:6379", getRedisName(lkMesh.GetName()), lkMesh.Namespace)
-		config.Redis = &lkstnv1a1.Redis{
+		actualConfig.Redis = &lkstnv1a1.Redis{
 			Address: &redisAddress,
 		}
+	} else {
+		actualConfig.Redis = dpConfig.Redis
+
 	}
-	if lkMesh.Spec.Components.Ingress.Rtmp != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
-		rtmp := fmt.Sprintf("rtmps://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, lkMesh.Spec.Components.Ingress.Rtmp.Port)
-		if config.IngressAddresses == nil {
-			config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+	if lkMesh.Spec.Components.Ingress.Config.RTMPPort != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
+		rtmp := fmt.Sprintf("rtmps://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, *lkMesh.Spec.Components.Ingress.Config.RTMPPort)
+		if actualConfig.IngressAddresses == nil {
+			actualConfig.IngressAddresses = &config.IngressAddresses{}
 		}
-		config.IngressAddresses.RtmpBaseUrl = ptr.To(rtmp)
+		actualConfig.IngressAddresses.RtmpBaseUrl = ptr.To(rtmp)
 	}
-	if lkMesh.Spec.Components.Ingress.Whip != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
-		whip := fmt.Sprintf("https://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, lkMesh.Spec.Components.Ingress.Whip.Port)
-		if config.IngressAddresses == nil {
-			config.IngressAddresses = &lkstnv1a1.IngressAddresses{}
+	if lkMesh.Spec.Components.Ingress.Config.WHIPPort != nil && lkMesh.Spec.Components.ApplicationExpose.HostName != nil {
+		whip := fmt.Sprintf("https://ingress.%s:%d", *lkMesh.Spec.Components.ApplicationExpose.HostName, *lkMesh.Spec.Components.Ingress.Config.WHIPPort)
+		if actualConfig.IngressAddresses == nil {
+			actualConfig.IngressAddresses = &config.IngressAddresses{}
 		}
-		config.IngressAddresses.WhipBaseUrl = ptr.To(whip)
+		actualConfig.IngressAddresses.WhipBaseUrl = ptr.To(whip)
 	}
 
-	//config.Rtc.StunServers = fmt.Sprintf("%s:%s", )
+	//dpConfig.Rtc.StunServers = fmt.Sprintf("%s:%s", )
 
-	yamlData, err := yaml.Marshal(&config)
+	yamlData, err := yaml.Marshal(&actualConfig)
 	if err != nil {
 		return nil, err
 	}
 	yamlMap := make(map[string]string)
-	yamlMap[opdefault.DefaultLiveKitConfigFileName] = string(yamlData)
+	yamlMap[config.DefaultLiveKitConfigFileName] = string(yamlData)
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:             opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey:       lkMesh.GetName(),
-				opdefault.DefaultLabelKeyForConfigMap: opdefault.DefaultLabelValueForConfigMap,
-				opdefault.RelatedComponent:            opdefault.ComponentLiveKit,
+				config.OwnedByLabelKey:             config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey:       lkMesh.GetName(),
+				config.DefaultLabelKeyForConfigMap: config.DefaultLabelValueForConfigMap,
+				config.RelatedComponent:            config.ComponentLiveKit,
 			},
 		},
 		Data: yamlMap,
@@ -87,15 +96,28 @@ func createLiveKitConfigMap(lkMesh *lkstnv1a1.LiveKitMesh, iceConfig stnrauthsvc
 	return cm, nil
 }
 
-func getAddressAndPortFromTurnUrl(url string) (*string, *int, error) {
+func getAddressAndPortFromTurnUrl(url string) (*string, *int, *string, error) {
 	splitString := strings.Split(url, ":")
 	address := splitString[1]
 	portString := strings.Split(splitString[2], "?")[0]
 	portInt, err := strconv.Atoi(portString)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to convert port string to int: %v", err)
+		return nil, nil, nil, fmt.Errorf("failed to convert port string to int: %v", err)
 	}
-	return &address, &portInt, nil
+
+	//at this point fetch transport proto
+	turnUrl, err := neturl.Parse(url)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("could not parse url to fetch transport proto: %v", err)
+	}
+	params, err := neturl.ParseQuery(turnUrl.RawQuery)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("could not parse url to fetch transport proto: %v", err)
+	}
+
+	proto := params.Get("transport")
+
+	return &address, &portInt, &proto, nil
 }
 
 func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
@@ -103,12 +125,12 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 	name := getLiveKitServiceName(*lkMesh.Spec.Components.LiveKit.Deployment.Name)
 
 	labels := map[string]string{
-		opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-		opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-		opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-		"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
-		"app.kubernetes.io/instance":    "livekit",
-		"app.kubernetes.io/version":     fetchVersion(lkMesh.Spec.Components.LiveKit.Deployment.Container.Image),
+		config.OwnedByLabelKey:       config.OwnedByLabelValue,
+		config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+		config.RelatedComponent:      config.ComponentLiveKit,
+		"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
+		"app.kubernetes.io/instance": "livekit",
+		"app.kubernetes.io/version":  fetchVersion(lkMesh.Spec.Components.LiveKit.Deployment.Container.Image),
 	}
 
 	if current := store.Services.GetObject(types.NamespacedName{
@@ -124,7 +146,7 @@ func createLiveKitService(lkMesh *lkstnv1a1.LiveKitMesh) *corev1.Service {
 			Name:      name,
 			Labels:    labels,
 			Annotations: map[string]string{
-				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
+				config.RelatedLiveKitMeshKey: types.NamespacedName{
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
@@ -183,19 +205,19 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deployment {
 			Name:      *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 			Namespace: lkMesh.Namespace,
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-				"app.kubernetes.io/name":        *lkMesh.Spec.Components.LiveKit.Deployment.Name,
-				"app.kubernetes.io/instance":    "livekit",
-				"app.kubernetes.io/version":     fetchVersion(containerSpec.Image),
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentLiveKit,
+				"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
+				"app.kubernetes.io/instance": "livekit",
+				"app.kubernetes.io/version":  fetchVersion(containerSpec.Image),
 			},
 			Annotations: map[string]string{
-				opdefault.RelatedLiveKitMeshKey: types.NamespacedName{
+				config.RelatedLiveKitMeshKey: types.NamespacedName{
 					Namespace: lkMesh.GetNamespace(),
 					Name:      lkMesh.GetName(),
 				}.String(),
-				opdefault.RelatedConfigMapKey: getLiveKitServerConfigMapName(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
+				config.RelatedConfigMapKey: getLiveKitServerConfigMapName(*lkMesh.Spec.Components.LiveKit.Deployment.Name),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -213,7 +235,7 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deployment {
 						"app.kubernetes.io/instance": "livekit",
 					},
 					Annotations: map[string]string{
-						opdefault.DefaultConfigMapResourceVersionKey: "",
+						config.DefaultConfigMapResourceVersionKey: "",
 					},
 					//TODO	Finalizers:                 nil,
 				},
@@ -256,10 +278,10 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *co
 			Name:      getRedisName(lkMesh.GetName()),
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-				"app":                           "redis",
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentLiveKit,
+				"app":                        "redis",
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -267,19 +289,19 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *co
 			Replicas:    &replicasValue,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-					opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-					opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-					"app":                           "redis",
+					config.OwnedByLabelKey:       config.OwnedByLabelValue,
+					config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+					config.RelatedComponent:      config.ComponentLiveKit,
+					"app":                        "redis",
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-						opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-						opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-						"app":                           "redis",
+						config.OwnedByLabelKey:       config.OwnedByLabelValue,
+						config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+						config.RelatedComponent:      config.ComponentLiveKit,
+						"app":                        "redis",
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -346,10 +368,10 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *co
 			Name:      getRedisName(lkMesh.GetName()),
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-				"app":                           "redis",
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentLiveKit,
+				"app":                        "redis",
 			},
 		},
 		Spec: corev1.ServiceSpec{
@@ -364,10 +386,10 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *co
 				},
 			},
 			Selector: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
-				"app":                           "redis",
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentLiveKit,
+				"app":                        "redis",
 			},
 			ClusterIP: "None",
 		},
@@ -378,9 +400,9 @@ func createLiveKitRedis(lkMesh *lkstnv1a1.LiveKitMesh) (*appsv1.StatefulSet, *co
 			Name:      "redis-config",
 			Namespace: lkMesh.GetNamespace(),
 			Labels: map[string]string{
-				opdefault.OwnedByLabelKey:       opdefault.OwnedByLabelValue,
-				opdefault.RelatedLiveKitMeshKey: lkMesh.GetName(),
-				opdefault.RelatedComponent:      opdefault.ComponentLiveKit,
+				config.OwnedByLabelKey:       config.OwnedByLabelValue,
+				config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+				config.RelatedComponent:      config.ComponentLiveKit,
 			},
 		},
 		Data: map[string]string{

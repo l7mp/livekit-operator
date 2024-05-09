@@ -38,6 +38,7 @@ var (
 	TestConfigCredential               = "testcredential"
 	TestAuthUri                        = "http://localhost:8080?service=turn"
 	TestAccessToken                    = "testtoken"
+	TestAccessKey                      = "access_token"
 	TestLogLevel                       = "info"
 	TestPort                           = 1234
 	TestRedisAddress                   = "dummy_address"
@@ -110,9 +111,7 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 						HealthCheckPort:               nil,
 					},
 					Config: &lkstnv1a1.LiveKitConfig{
-						Keys: &lkstnv1a1.Keys{
-							AccessToken: &TestAccessToken,
-						},
+						Keys:     &map[string]string{TestAccessKey: TestAccessToken},
 						LogLevel: &TestLogLevel,
 						Port:     &TestPort,
 						Redis: &lkstnv1a1.Redis{
@@ -128,7 +127,7 @@ var TestLkMesh = lkstnv1a1.LiveKitMesh{
 							//	//Credential: TestConfigCredential,
 							//	//Host:
 							//}},
-							UseExternalIp: &TestUseExternalIP,
+							//UseExternalIp: &TestUseExternalIP,
 						},
 					},
 				},

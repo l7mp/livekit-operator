@@ -66,7 +66,7 @@ func (r *Renderer) renderEnvoyTCPRoutesForLiveKitIngress(renderContext *RenderCo
 	log.V(2).Info("trying to render Envoy LiveKitIngress TCPRoute")
 	lkMesh := renderContext.liveKitMesh
 
-	if renderContext.liveKitMesh.Spec.Components.Ingress.Rtmp != nil {
+	if renderContext.liveKitMesh.Spec.Components.Ingress.Config.RTMPPort != nil {
 		rtmpTcpRoute := createEnvoyLiveKitIngressTCPRouteRtmp(lkMesh)
 		if err := controllerutil.SetOwnerReference(lkMesh, rtmpTcpRoute, r.scheme); err != nil {
 			log.Error(err, "cannot set owner reference", "owner",
@@ -79,7 +79,7 @@ func (r *Renderer) renderEnvoyTCPRoutesForLiveKitIngress(renderContext *RenderCo
 		log.V(2).Info("Upserted Envoy TCPRoute into UpsertQueue", "tcproute", store.GetObjectKey(rtmpTcpRoute))
 	}
 
-	if renderContext.liveKitMesh.Spec.Components.Ingress.Whip != nil {
+	if renderContext.liveKitMesh.Spec.Components.Ingress.Config.WHIPPort != nil {
 		// FIXME change this tcp route to HTTP route
 		whipTcpRoute := createEnvoyLiveKitIngressTCPRouteWhip(lkMesh)
 		if err := controllerutil.SetOwnerReference(lkMesh, whipTcpRoute, r.scheme); err != nil {
