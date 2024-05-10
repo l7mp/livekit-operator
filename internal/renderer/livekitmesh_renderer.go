@@ -32,6 +32,8 @@ func (r *Renderer) RenderLiveKitMesh(e *event.Render) {
 
 			r.renderLiveKitIngressResources(renderContext)
 
+			r.renderLiveKitEgressResources(renderContext)
+
 			log.Info("event to channel")
 			r.operatorCh <- renderContext.update
 		}
@@ -82,5 +84,12 @@ func (r *Renderer) renderLiveKitIngressResources(renderContext *RenderContext) {
 		r.renderLiveKitIngressConfigMap(renderContext)
 		r.renderLiveKitIngressDeployment(renderContext)
 		r.renderLiveKitIngressService(renderContext)
+	}
+}
+
+func (r *Renderer) renderLiveKitEgressResources(renderContext *RenderContext) {
+	if renderContext.liveKitMesh.Spec.Components.Egress != nil {
+		r.renderLiveKitEgressConfigMap(renderContext)
+		r.renderLiveKitEgressDeployment(renderContext)
 	}
 }

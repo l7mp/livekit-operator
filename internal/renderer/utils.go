@@ -153,3 +153,9 @@ func getExternalDNSClusterRoleBindingName(name string, namespace string) string 
 func getIngressName(name string) string {
 	return fmt.Sprintf("%s-ingress", name)
 }
+
+// Egress related utils
+
+func getEgressName(name string) string {
+	return fmt.Sprintf("%s-egress", name)
+}
