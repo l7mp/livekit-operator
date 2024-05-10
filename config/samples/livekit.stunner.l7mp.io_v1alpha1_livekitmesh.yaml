@@ -25,14 +25,6 @@ spec:
             port_range_end: 60000
             port_range_start: 50000
             tcp_port: 7801
-            # TODO remove turn_servers somehow
-            turn_servers:
-              - host: ""
-            use_external_ip: false
-#        configMap:
-#          namespace: default
-#          name: default-livekit-config
-        # container template
         container:
           image: livekit/livekit-server:v1.4.2
           imagePullPolicy: Always
@@ -48,6 +40,7 @@ spec:
             requests:
               cpu: 500m
               memory: 128Mi
+
     applicationExpose:
       hostName: livekit.stunner.cc
       externalDNS:
@@ -72,19 +65,26 @@ spec:
           protocol: TURN-UDP
 
     ingress:
-      ingressConfigs:
-        - inputType: 1
-          roomName: room
-          participantIdentity: my-participant
-          participantName: MyParticipant
-          bypassTranscoding: true
-          url: example.com
+      config:
+        rtmp_port: 1935
+        whip_port: 8080
+        cpu_cost:
+          rtmp_cpu_cost: 2
+        http_relay_port: 9090
+        logging:
+          level: debug
+        prometheus_port: 7889
+
+    egress:
+      config:
+        log_level: debug
+      #TODO
+
+
 
   #    scaling:
   #    #TODO
   #    ingress:
-  #    #TODO
-  #    egress:
   #    #TODO
 
   #    monitoring:

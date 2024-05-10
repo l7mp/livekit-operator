@@ -125,6 +125,64 @@ spec:
                     description: LiveKit's Egress resource descriptor. Egress makes
                       it possible to stream a single user's or any number of users'
                       streams out of a room onto an RTMP port.
+                    properties:
+                      config:
+                        description: Config holds configuration for the LiveKit Ingress
+                        properties:
+                          azure:
+                            properties:
+                              account_key:
+                                type: string
+                              account_name:
+                                type: string
+                              container_name:
+                                type: string
+                            required:
+                            - account_key
+                            - account_name
+                            - container_name
+                            type: object
+                          gcp:
+                            properties:
+                              bucket:
+                                type: string
+                              credentials_json:
+                                type: string
+                            required:
+                            - bucket
+                            - credentials_json
+                            type: object
+                          health_port:
+                            type: integer
+                          insecure:
+                            description: TemplateBase EnableChromeSandbox
+                            type: boolean
+                          log_level:
+                            type: string
+                          prometheus_port:
+                            type: integer
+                          s3:
+                            properties:
+                              access_key:
+                                type: string
+                              bucket:
+                                type: string
+                              endpoint:
+                                type: string
+                              region:
+                                type: string
+                              secret:
+                                type: string
+                            required:
+                            - access_key
+                            - bucket
+                            - endpoint
+                            - region
+                            - secret
+                            type: object
+                          template_port:
+                            type: integer
+                        type: object
                     type: object
                   ingress:
                     description: LiveKit's Ingress resource descriptor. This resource
@@ -133,47 +191,48 @@ spec:
                       that this resource enables a one-way communication between the
                       client and the media server.
                     properties:
-                      ingressConfigs:
-                        description: 'IngressConfigs is a list of ingress configurations.
-                          See more: https://docs.livekit.io/egress-ingress/ingress/overview/#CreateIngress'
-                        items:
-                          properties:
-                            bypassTranscoding:
-                              description: BypassTranscoding for WHIP ingress only,
-                                disables transcoding and simulcast
-                              type: boolean
-                            inputType:
-                              description: InputType decides whether the user wants
-                                to use RTMP (0) or  WHIP (1) as the input type of
-                                the ingress
-                              enum:
-                              - 0
-                              - 1
-                              - 2
-                              type: integer
-                            participantIdentity:
-                              description: ParticipantIdentity is the unique identity
-                                for the room participant the Ingress service will
-                                connect as
-                              type: string
-                            participantName:
-                              description: ParticipantName is the Name displayed in
-                                the room for the participant
-                              type: string
-                            roomName:
-                              description: RoomName is the name of the room to connect
-                                to
-                              type: string
-                            url:
-                              description: URL is the source URL of the file
-                              type: string
-                          required:
-                          - inputType
-                          - participantIdentity
-                          - participantName
-                          - roomName
-                          type: object
-                        type: array
+                      config:
+                        description: Config holds configuration for the LiveKit Ingress
+                        properties:
+                          cpu_cost:
+                            properties:
+                              rtmp_cpu_cost:
+                                type: integer
+                              whip_bypass_transcoding_cpu_cost:
+                                type: integer
+                              whip_cpu_cost:
+                                type: integer
+                            type: object
+                          health_port:
+                            type: integer
+                          http_relay_port:
+                            type: integer
+                          logging:
+                            properties:
+                              level:
+                                type: string
+                            required:
+                            - level
+                            type: object
+                          prometheus_port:
+                            type: integer
+                          rtmp_port:
+                            default: 1935
+                            description: 'Rtmp holds the configuration for the RTMP
+                              service If specified the all the necessary rescources
+                              (e.g.: gatewayclass, gateway listener, tcp route) will
+                              be created. If omitted completely no resources will
+                              be created for it.'
+                            type: integer
+                          whip_port:
+                            default: 8080
+                            description: 'Whip holds the configuration for the WHIP
+                              service If specified the all the necessary rescources
+                              (e.g.: gatewayclass, gateway listener, http route) will
+                              be created. If omitted completely no resources will
+                              be created for it.'
+                            type: integer
+                        type: object
                     type: object
                   liveKit:
                     description: LiveKit is the main resource that the operator manages.
@@ -185,31 +244,30 @@ spec:
                           Deployment manifest that will be created by the operator.
                         properties:
                           config:
+                            description: Config holds the configuration for the livekit
+                              server
                             properties:
-                              ingress:
-                                properties:
-                                  rtmp_base_url:
-                                    type: string
-                                  whip_base_url:
-                                    type: string
-                                type: object
                               keys:
-                                properties:
-                                  access_token:
-                                    type: string
+                                additionalProperties:
+                                  type: string
                                 type: object
                               log_level:
                                 type: string
                               port:
                                 type: integer
                               redis:
-                                description: Redis holds the configuration for the
-                                  Redis deployment If the field is configured, no
-                                  redis will be created by the operator, in this case
-                                  user deployed Redis deployment is required If it
-                                  is omitted, a default Redis will be created.
+                                description: Redis in case redis is configured no
+                                  Redis resources will be created by the operator
+                                  The value of this field inherited to the Ingress
+                                  and Egress config as well
                                 properties:
                                   address:
+                                    type: string
+                                  db:
+                                    type: string
+                                  password:
+                                    type: string
+                                  username:
                                     type: string
                                 type: object
                               rtc:
@@ -218,50 +276,9 @@ spec:
                                     type: integer
                                   port_range_start:
                                     type: integer
-                                  stun_servers:
-                                    items:
-                                      type: string
-                                    type: array
                                   tcp_port:
                                     type: integer
-                                  turn_servers:
-                                    items:
-                                      properties:
-                                        credential:
-                                          type: string
-                                        host:
-                                          type: string
-                                        port:
-                                          type: integer
-                                        protocol:
-                                          type: string
-                                        uri:
-                                          type: string
-                                        username:
-                                          type: string
-                                      type: object
-                                    type: array
-                                  use_external_ip:
-                                    default: false
-                                    type: boolean
                                 type: object
-                            type: object
-                          configMap:
-                            description: ConfigMap holds the configuration for the
-                              livekit server that is executed. TODO in the future
-                              we should make a copy from the configmap into the namespace
-                              the lkmesh was deployed to
-                            properties:
-                              name:
-                                description: Name is the name of the configMap resource
-                                type: string
-                              namespace:
-                                description: Namespace is the namespace of the configMap
-                                  resource
-                                type: string
-                            required:
-                            - name
-                            - namespace
                             type: object
                           container:
                             description: Container template for the containers created
