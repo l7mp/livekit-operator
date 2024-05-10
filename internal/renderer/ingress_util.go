@@ -57,7 +57,7 @@ func createLiveKitIngressConfigMap(lkMesh *lkstnv1a1.LiveKitMesh) (*corev1.Confi
 				config.OwnedByLabelKey:             config.OwnedByLabelValue,
 				config.RelatedLiveKitMeshKey:       lkMesh.GetName(),
 				config.DefaultLabelKeyForConfigMap: config.DefaultLabelValueForConfigMap,
-				config.RelatedComponent:            config.ComponentLiveKit,
+				config.RelatedComponent:            config.ComponentIngress,
 			},
 		},
 		Data: yamlMap,
