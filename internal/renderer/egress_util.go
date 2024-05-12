@@ -122,7 +122,7 @@ func createLiveKitEgressDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deploy
 					TerminationGracePeriodSeconds: ptr.To(int64(3600)),
 					Containers: []corev1.Container{{
 						Name:            egressName,
-						Image:           "livekit/egress:v1.8",
+						Image:           "livekit/egress:v1.7.12",
 						ImagePullPolicy: "IfNotPresent",
 						Ports: []corev1.ContainerPort{
 							{
@@ -137,12 +137,15 @@ func createLiveKitEgressDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deploy
 							},
 						},
 						Env: envList,
-						//TODO Resources: ,
 					},
 					},
 				},
 			},
 		},
+	}
+
+	if lkMesh.Spec.Components.Egress.Container.Resources != nil {
+		dp.Spec.Template.Spec.Containers[0].Resources = *lkMesh.Spec.Components.Egress.Container.Resources
 	}
 
 	return dp
