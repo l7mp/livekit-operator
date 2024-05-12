@@ -316,6 +316,13 @@ type Gcp struct {
 type Egress struct {
 	// Config holds configuration for the LiveKit Ingress
 	Config *EgressConfig `yaml:"config" json:"config,omitempty"`
+
+	// Container template for the containers created in each Pod in the replicaset.
+	// If omitted the default template will be used. Which spawns a single container
+	//TODO
+	//
+	// +optional
+	Container *Container `json:"container"`
 }
 
 type CertManager struct {
@@ -404,6 +411,7 @@ type Component struct {
 
 	// ApplicationExpose is the component that contains all required subcomponents that are accountable for exposing the
 	// application to the internet on a secure, encrypted way. This includes the Cert-manager, Envoy GW, and ExternalDns.
+	// +kubebuilder:validation:Required
 	ApplicationExpose *ApplicationExpose `json:"applicationExpose"`
 
 	// Monitoring enables the Prometheus metric exposition, installs
@@ -411,13 +419,6 @@ type Component struct {
 	//
 	// +optional
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
-
-	//// Helm holds a configuration for the desired Helm charts in the cluster.
-	//// In case the user installs the operator in a cluster that has already one or more of the
-	//// Helm charts installed, they can disable the installation to prevent collision.
-	////
-	//// +kubebuilder:validation:Required
-	//Helm *Helm `json:"helm"`
 
 	// Stunner holds the configuration for the to-be created STUNner resources.
 	// These resources provide the necessary resources for a possible/successful TURN connection
