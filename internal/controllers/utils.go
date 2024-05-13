@@ -22,6 +22,10 @@ func (r *LiveKitMeshReconciler) updateLiveKitMeshStatus(ctx context.Context, req
 
 	lkMesh, _, _ := r.fetchLiveKitMesh(log, ctx, req)
 
+	if lkMesh == nil {
+		return nil
+	}
+	log.Info("trying to update LiveKitMesh status", "status", lkMesh.Status)
 	if lkMesh.Status.ComponentStatus == nil {
 		log.Info("Unprocessed LiveKitMesh, initializing its status")
 		lkMesh.Status.ComponentStatus = make(map[string]lkstnv1a1.InstallStatus)

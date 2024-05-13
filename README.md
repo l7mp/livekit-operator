@@ -1,12 +1,180 @@
-# livekit-operator
-// TODO(user): Add simple overview of use/purpose
+# LiveKit-Operator
+The LiveKit-Operator is a Kubernetes operator which aims to ease the deployment of the [LiveKit](https://github.com/livekit/livekit)
+media server into Kubernetes.
+
+## Notice
+Work in progress, not ready for deployment! Can be used to play with.
+This operator only supports the deployment of the LiveKit server and no other media servers. This might change in
+the future if there is interest in it by the people.
+
+## Table of contents
+* [Description](#description)
+* [Features](#current-features)
+* [Running the operator](#running-the-operator)
+  * [Running locally](#running-locally)
+  * [Deploying into the cluster via kubectl](#deploying-into-the-cluster-via-kubectl)
+  * [Deploying into the cluster using Helm](#deploying-into-the-cluster-using-helm)
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Since WebRTC and Kubernetes doesn't walk holding hands it can be a real struggle to deploy your application into your cluster.
+Although STUNner provides many thorough examples of deploying some media servers, everything needs to be done manually.
+There is no automation involved in the process, you must configure resources and deploy them one-by-one just to wait nervously
+for a LoadBalancer IP to show up which can be taken and put into another resource which then to be deployed and so on.
+It is hard for beginners and not easy for experienced developers.
+The purpose of the operator is to provide a simple solution to all struggles, and create and deploy all resources into your
+cluster in a few minutes. Users just need to configure a single custom resource which will be picked up by the operator
+and used to configure the required resources.
+In the upcoming sections all the necessary things will be explained in order to fire up the Operator and configure it
+accordingly to your needs.
+NOTE: This operator only supports the deployment of the LiveKit server and no other media servers.
 
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+## Current capabilities
+
+As was mentioned above the operator is still in progress, lots of issues to be fixed, tested out and the API is changing
+a lot. Although, it is not ready, yet it can fire up a LiveKit server along with LiveKit's Ingress and Egress if needed.
+All the resources are created to have a running and usable setup. This includes three additional Helm charts
+([STUNner-Gateway-Operator](https://github.com/l7mp/stunner/blob/main/docs/INSTALL.md),
+[Envoy-Gateway](https://github.com/envoyproxy/gateway/tree/main/charts/gateway-helm),
+and [Cert-Manager](https://cert-manager.io/docs/installation/helm/)), Redis resources, 
+[External DNS](https://github.com/kubernetes-sigs/external-dns) resources, 
+[Gateway API](https://gateway-api.sigs.k8s.io/) resources and so on.  
+
+> [!Warning]
+>
+> The following constraints apply to the current version:
+> - External DNS: only the CloudFlare configuration is possible and supported via the LiveKitMesh custom resource.
+> - Only tested in GKE on a standard cluster. No experience running with different cloud providers.
+
+
+## LiveKitMesh custom resource
+The Operator uses a CR (Custom Resource) to trigger the deployment and control the configuration of a new setup.
+This custom resource is called the `LiveKitMesh`, and it specifies separate components in the `spec` field in order to handle
+all resources and configuration in a different context.
+The Custom Resource Definition file for the CR can be found [here](config/crd/bases/livekit.stunner.l7mp.io_livekitmeshes.yaml).
+
+The below yaml shows a potential configuration for the LiveKitMesh custom resource.
+The things must be explained are as follows:
+* The `metadata.name` and `metadata.namespace` pair MUST be unique otherwise things will break.
+* Component `liveKit`, `stunner`, and `applicationExpose` are REQUIRED, `ingress` and `egress` are OPTIONAL
+* 
+
+```yaml
+apiVersion: livekit.stunner.l7mp.io/v1alpha1
+kind: LiveKitMesh
+metadata:
+  labels:
+    app.kubernetes.io/name: livekitmesh
+    app.kubernetes.io/instance: livekitmesh-sample
+    app.kubernetes.io/part-of: livekit-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: livekit-operator
+  name: livekitmesh-sample
+  namespace: default
+spec:
+  components:
+    liveKit:
+      deployment:
+        replicas: 1
+        config:
+          keys:
+            access_token: secretsecretsecretsecretsecretsecret
+          log_level: debug
+          port: 7880
+# If you have your own redis deployment uncomment the lines under and specify them.          
+#          redis:
+#            address: redis.default.svc:6379
+#            username: user
+#            password: pw
+#            db: db
+          rtc:
+            port_range_end: 60000
+            port_range_start: 50000
+            tcp_port: 7801
+        container:
+          image: livekit/livekit-server:v1.4.2
+          imagePullPolicy: Always
+          args: ["--disable-strict-config"]
+          terminationGracePeriodSeconds: 3600
+          resources:
+            limits:
+              cpu: 2
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+
+    applicationExpose:
+      hostName: livekit.<your-domain>
+      externalDNS:
+        cloudFlare:
+          token: <your-token>
+          email: <your-email>
+      certManager:
+        issuer:
+          apiToken: <your-token>
+          challengeSolver: cloudflare
+          email: <your-email>
+    stunner:
+      gatewayConfig:
+        realm: stunner.l7mp.io
+        authType: static
+        userName: "username"
+        password: "password"
+      gatewayListeners:
+        - name: udp-listener
+          port: 3478
+          protocol: TURN-UDP
+
+    ingress:
+      config:
+        rtmp_port: 1935
+        whip_port: 8080
+        cpu_cost:
+          rtmp_cpu_cost: 2
+        http_relay_port: 9090
+        logging:
+          level: debug
+        prometheus_port: 7889
+
+    egress:
+      config:
+        log_level: debug
+      container:
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "1"
+          limits:
+            memory: "512Mi"
+            cpu: "2"
+```
+
+### Component liveKit
+This component is REQUIRED.
+
+### Component stunner
+This component is REQUIRED.
+
+### Component applicationExpose
+This component is REQUIRED.
+
+### Component ingress
+This component is OPTIONAL.
+
+### Component egress
+This component is OPTIONAL.
+
+
+## Running the operator
+
+### Running locally
+ 
+### Deploying into the cluster via kubectl
+
+### Deploying into the cluster using Helm
+
+
+
 
 ### Running on the cluster
 1. Install Instances of Custom Resources:
@@ -78,17 +246,7 @@ More information can be found via the [Kubebuilder Documentation](https://book.k
 
 ## License
 
-Copyright 2023 Kornel David.
+Copyright 2021-2024 by its authors. Some rights reserved. See [AUTHORS](AUTHORS).
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+MIT License - see [LICENSE](LICENSE) for full text.
 
