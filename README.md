@@ -238,8 +238,8 @@ ALL fields in the below table are in the `spec.components.egress` field object.
 | config.prometheus_port 	 | int    	 | Port used to collect Prometheus metrics.                                                             	 | False    	 |
 | config.log_level       	 | string 	 | Sets the log level of the deployed Egress resource. debug, info, warn, or error. Defaults to `info`. 	 | False    	 |
 | config.s3              	 | {}     	 | S3 configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                      	 | False    	 |
-| config.azure           	 | 	        | Azure configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                   	 | False    	 |
-| config.gcp             	 | 	        | GCP configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                     	 | False    	 |
+| config.azure           	 | {}       | Azure configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                   	 | False    	 |
+| config.gcp             	 | {}       | GCP configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                     	 | False    	 |
 
 ## Running the operator
 
