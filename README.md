@@ -20,6 +20,7 @@ the future if there is interest in it by the people.
   * [Running locally](#running-locally)
   * [Deploying into the cluster via kubectl](#deploying-into-the-cluster-via-kubectl)
   * [Deploying into the cluster using Helm](#deploying-into-the-cluster-using-helm)
+* [Command-line flags](#command-line-flags)
 * [Uninstall CRDs](#uninstall-crds)
 * [Licence](#license)
 
