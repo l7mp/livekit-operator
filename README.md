@@ -324,3 +324,7 @@ Copyright 2021-2024 by its authors. Some rights reserved. See [AUTHORS](AUTHORS)
 
 MIT License - see [LICENSE](LICENSE) for full text.
 
+## Acknowledgments
+
+Huge thanks to [LiveKit](https://github.com/livekit). Without their great open-source tools
+and infrastructure this project would not be possible.
