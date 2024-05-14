@@ -53,23 +53,24 @@ type Container struct {
 	// +optional
 	Args []string `json:"args,omitempty"`
 
-	// List of environment variables to set in the stunnerd container.
+	// List of environment variables to set in the LiveKit container.
 	//
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	// Resources required by stunnerd.
+	// Resources required by LiveKit.
 	//
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Optional duration in seconds the stunnerd needs to terminate gracefully. Defaults to 3600 seconds.
+	// Optional duration in seconds the LiveKit needs to terminate gracefully. Defaults to 3600 seconds.
 	//
+	// +kubebuilder:default=3600
 	// +optional
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 
-	// Host networking requested for the stunnerd pod to use the host's network namespace.
-	// Can be used to implement public TURN servers with Kubernetes.  Defaults to false.
+	// Host networking requested for the LiveKit pod to use the host's network namespace.
+	// Defaults to false.
 	//
 	// +kubebuilder:default=false
 	// +optional
@@ -132,21 +133,23 @@ type Redis struct {
 type Rtc struct {
 
 	// PortRangeEnd UDP ports to use for client traffic.
+	//
 	// +kubebuilder:default=50000
+	// +optional
 	PortRangeEnd *int `yaml:"port_range_end" json:"port_range_end,omitempty"`
 
 	// PortRangeStart UDP ports to use for client traffic.
+	//
 	// +kubebuilder:default=60000
+	// +optional
 	PortRangeStart *int `yaml:"port_range_start" json:"port_range_start,omitempty"`
 
 	// TcpPort When set, LiveKit enable WebRTC ICE over TCP when UDP isn't available.
+	//
+	// +kubebuilder:default=7801
+	// +optional
 	TcpPort *int `yaml:"tcp_port" json:"tcp_port,omitempty"`
 }
-
-//type IngressAddresses struct {
-//	RtmpBaseUrl *string `json:"rtmp_base_url,omitempty"`
-//	WhipBaseUrl *string `json:"whip_base_url,omitempty"`
-//}
 
 type LiveKitConfig struct {
 
@@ -257,26 +260,35 @@ type Whip struct {
 }
 
 type IngressConfig struct {
+	// CPUCost CPU resources to reserve when accepting RTMP sessions, in fraction of core count.
 	// +optional
 	CPUCost *CPUCost `yaml:"cpu_cost" json:"cpu_cost"`
+
+	// HealthPort if used, will open an http port for health checks.
 	// +optional
 	HealthPort *int `yaml:"health_port" json:"health_port"`
+
+	// PrometheusPort port used to collect Prometheus metrics.
 	// +optional
 	PrometheusPort *int `yaml:"prometheus_port" json:"prometheus_port"`
 	// Rtmp holds the configuration for the RTMP service
 	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, tcp route) will be created.
 	// If omitted completely no resources will be created for it.
-	// +kubebuilder:default=1935
+	//
 	// +optional
 	RTMPPort *int `yaml:"rtmp_port" json:"rtmp_port"`
 	// Whip holds the configuration for the WHIP service
 	// If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, http route) will be created.
 	// If omitted completely no resources will be created for it.
-	// +kubebuilder:default=8080
+	//
 	// +optional
 	WHIPPort *int `yaml:"whip_port" json:"whip_port"`
+
+	// HTTPRelayPort TCP port for communication between the main service process and session handler processes
 	// +optional
 	HTTPRelayPort *int `yaml:"http_relay_port" json:"http_relay_port"`
+
+	// Logging is used to set the log level of the Ingress
 	// +optional
 	Logging *Logging `yaml:"logging" json:"logging"`
 }
@@ -291,6 +303,8 @@ type CPUCost struct {
 }
 
 type Logging struct {
+
+	// +kubebuilder:validation:Enum=info;debug;warn;error
 	Level string `yaml:"level" json:"level"`
 }
 
@@ -298,26 +312,41 @@ type Logging struct {
 type Ingress struct {
 
 	// Config holds configuration for the LiveKit Ingress
+	//
+	// +optional
 	Config *IngressConfig `yaml:"config" json:"config,omitempty"`
 }
 
 type EgressConfig struct {
+
+	// HealthPort if used, will open an http port for health checks.
 	// +optional
 	HealthPort *int `yaml:"health_port" json:"health_port"`
+
+	// Port used to host default templates.
 	// +optional
 	TemplatePort *int `yaml:"template_port" json:"template_port"`
+
+	// PrometheusPort port used to collect Prometheus metrics.
 	// +optional
 	PrometheusPort *int `yaml:"prometheus_port" json:"prometheus_port"`
+
+	// LogLevel Sets the log level of the deployed Egress resource.
+	// +kubebuilder:validation:Enum=debug;info;warn;error
 	// +optional
 	LogLevel *string `yaml:"log_level" json:"log_level"`
+
 	//TemplateBase
 	//EnableChromeSandbox
 	// +optional
 	Insecure *bool `yaml:"insecure" json:"insecure"`
+
 	// +optional
 	S3 *S3 `yaml:"s3" json:"s3"`
+
 	// +optional
 	Azure *Azure `yaml:"azure" json:"azure"`
+
 	// +optional
 	Gcp *Gcp `yaml:"gcp" json:"gcp"`
 }
@@ -342,7 +371,7 @@ type Gcp struct {
 }
 
 type Egress struct {
-	// Config holds configuration for the LiveKit Ingress
+	// Config holds configuration for the LiveKit Egress
 	Config *EgressConfig `yaml:"config" json:"config,omitempty"`
 
 	// Container template for the containers created in each Pod in the replicaset.
@@ -354,7 +383,7 @@ type Egress struct {
 }
 
 type CertManager struct {
-	// Issuer holds the necessary configuration about the used Issuer
+	// Issuer holds the necessary configuration for the used Issuer
 	//
 	// +optional
 	Issuer *Issuer `json:"issuer,omitempty"`
@@ -366,10 +395,14 @@ type Monitoring struct {
 
 type Stunner struct {
 
-	// GatewayConfig is the configuration for the STUNner deployment's GatewayConfig.spec object
+	// GatewayConfig is the configuration for the STUNner deployment's GatewayConfig object
+	//
+	// +kubebuilder:validation:Required
 	GatewayConfig *stnrgwv1.GatewayConfigSpec `yaml:"gatewayConfig" json:"gatewayConfig"`
 
-	// GatewayListeners is the configuration of the STUNner deployment's Gateway object
+	// GatewayListeners list is the configuration for the STUNner deployment's Gateway object
+	//
+	// +kubebuilder:validation:Required
 	GatewayListeners []gwapiv1.Listener `yaml:"gatewayListeners" json:"gatewayListeners"`
 }
 
@@ -390,7 +423,7 @@ type ExternalDNS struct {
 
 type ApplicationExpose struct {
 
-	// HostName is the DNS host name that will be used by both cert-manager and Envoy GW.
+	// HostName is the DNS host name that will be used by both Cert-Manager, External DNS and Envoy GW.
 	// DnsZone Certificate requests will be issues against this HostName.
 	// This ChallengeSolver will use this to solve the challenge.
 	//

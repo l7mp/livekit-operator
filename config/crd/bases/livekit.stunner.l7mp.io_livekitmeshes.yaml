@@ -52,7 +52,7 @@ spec:
                         properties:
                           issuer:
                             description: Issuer holds the necessary configuration
-                              about the used Issuer
+                              for the used Issuer
                             properties:
                               apiToken:
                                 description: ApiToken is the API token for the CloudFlare
@@ -114,9 +114,9 @@ spec:
                         type: object
                       hostName:
                         description: HostName is the DNS host name that will be used
-                          by both cert-manager and Envoy GW. DnsZone Certificate requests
-                          will be issues against this HostName. This ChallengeSolver
-                          will use this to solve the challenge.
+                          by both Cert-Manager, External DNS and Envoy GW. DnsZone
+                          Certificate requests will be issues against this HostName.
+                          This ChallengeSolver will use this to solve the challenge.
                         type: string
                     required:
                     - hostName
@@ -127,7 +127,7 @@ spec:
                       streams out of a room onto an RTMP port.
                     properties:
                       config:
-                        description: Config holds configuration for the LiveKit Ingress
+                        description: Config holds configuration for the LiveKit Egress
                         properties:
                           azure:
                             properties:
@@ -153,13 +153,24 @@ spec:
                             - credentials_json
                             type: object
                           health_port:
+                            description: HealthPort if used, will open an http port
+                              for health checks.
                             type: integer
                           insecure:
                             description: TemplateBase EnableChromeSandbox
                             type: boolean
                           log_level:
+                            description: LogLevel Sets the log level of the deployed
+                              Egress resource.
+                            enum:
+                            - debug
+                            - info
+                            - warn
+                            - error
                             type: string
                           prometheus_port:
+                            description: PrometheusPort port used to collect Prometheus
+                              metrics.
                             type: integer
                           s3:
                             properties:
@@ -181,6 +192,7 @@ spec:
                             - secret
                             type: object
                           template_port:
+                            description: Port used to host default templates.
                             type: integer
                         type: object
                       container:
@@ -1356,7 +1368,7 @@ spec:
                             type: array
                           env:
                             description: List of environment variables to set in the
-                              stunnerd container.
+                              LiveKit container.
                             items:
                               description: EnvVar represents an environment variable
                                 present in a Container.
@@ -1480,10 +1492,9 @@ spec:
                             type: integer
                           hostNetwork:
                             default: false
-                            description: Host networking requested for the stunnerd
-                              pod to use the host's network namespace. Can be used
-                              to implement public TURN servers with Kubernetes.  Defaults
-                              to false.
+                            description: Host networking requested for the LiveKit
+                              pod to use the host's network namespace. Defaults to
+                              false.
                             type: boolean
                           image:
                             description: Container image name.
@@ -1493,7 +1504,7 @@ spec:
                               IfNotPresent.
                             type: string
                           resources:
-                            description: Resources required by stunnerd.
+                            description: Resources required by LiveKit.
                             properties:
                               claims:
                                 description: "Claims lists the names of resources,
@@ -1733,7 +1744,8 @@ spec:
                                 type: object
                             type: object
                           terminationGracePeriodSeconds:
-                            description: Optional duration in seconds the stunnerd
+                            default: 3600
+                            description: Optional duration in seconds the LiveKit
                               needs to terminate gracefully. Defaults to 3600 seconds.
                             format: int64
                             type: integer
@@ -1794,6 +1806,8 @@ spec:
                         description: Config holds configuration for the LiveKit Ingress
                         properties:
                           cpu_cost:
+                            description: CPUCost CPU resources to reserve when accepting
+                              RTMP sessions, in fraction of core count.
                             properties:
                               rtmp_cpu_cost:
                                 type: integer
@@ -1803,20 +1817,33 @@ spec:
                                 type: integer
                             type: object
                           health_port:
+                            description: HealthPort if used, will open an http port
+                              for health checks.
                             type: integer
                           http_relay_port:
+                            description: HTTPRelayPort TCP port for communication
+                              between the main service process and session handler
+                              processes
                             type: integer
                           logging:
+                            description: Logging is used to set the log level of the
+                              Ingress
                             properties:
                               level:
+                                enum:
+                                - info
+                                - debug
+                                - warn
+                                - error
                                 type: string
                             required:
                             - level
                             type: object
                           prometheus_port:
+                            description: PrometheusPort port used to collect Prometheus
+                              metrics.
                             type: integer
                           rtmp_port:
-                            default: 1935
                             description: 'Rtmp holds the configuration for the RTMP
                               service If specified the all the necessary rescources
                               (e.g.: gatewayclass, gateway listener, tcp route) will
@@ -1824,7 +1851,6 @@ spec:
                               be created for it.'
                             type: integer
                           whip_port:
-                            default: 8080
                             description: 'Whip holds the configuration for the WHIP
                               service If specified the all the necessary rescources
                               (e.g.: gatewayclass, gateway listener, http route) will
@@ -1849,10 +1875,25 @@ spec:
                               keys:
                                 additionalProperties:
                                   type: string
+                                description: Keys API key / secret pairs. Keys are
+                                  used for JWT authentication, server APIs would require
+                                  a keypair in order to generate access tokens and
+                                  make calls to the server
                                 type: object
                               log_level:
+                                default: info
+                                description: LogLevel is the level used in the LiveKit
+                                  server
+                                enum:
+                                - debug
+                                - info
+                                - warn
+                                - error
                                 type: string
                               port:
+                                default: 7880
+                                description: Port is main TCP port for RoomService
+                                  and RTC endpoint.
                                 type: integer
                               redis:
                                 description: Redis in case redis is configured no
@@ -1870,12 +1911,22 @@ spec:
                                     type: string
                                 type: object
                               rtc:
+                                description: Rtc WebRTC configuration for LiveKit
                                 properties:
                                   port_range_end:
+                                    default: 50000
+                                    description: PortRangeEnd UDP ports to use for
+                                      client traffic.
                                     type: integer
                                   port_range_start:
+                                    default: 60000
+                                    description: PortRangeStart UDP ports to use for
+                                      client traffic.
                                     type: integer
                                   tcp_port:
+                                    default: 7801
+                                    description: TcpPort When set, LiveKit enable
+                                      WebRTC ICE over TCP when UDP isn't available.
                                     type: integer
                                 type: object
                             type: object
@@ -3138,7 +3189,7 @@ spec:
                                 type: array
                               env:
                                 description: List of environment variables to set
-                                  in the stunnerd container.
+                                  in the LiveKit container.
                                 items:
                                   description: EnvVar represents an environment variable
                                     present in a Container.
@@ -3266,9 +3317,8 @@ spec:
                                 type: integer
                               hostNetwork:
                                 default: false
-                                description: Host networking requested for the stunnerd
-                                  pod to use the host's network namespace. Can be
-                                  used to implement public TURN servers with Kubernetes.  Defaults
+                                description: Host networking requested for the LiveKit
+                                  pod to use the host's network namespace. Defaults
                                   to false.
                                 type: boolean
                               image:
@@ -3279,7 +3329,7 @@ spec:
                                   IfNotPresent.
                                 type: string
                               resources:
-                                description: Resources required by stunnerd.
+                                description: Resources required by LiveKit.
                                 properties:
                                   claims:
                                     description: "Claims lists the names of resources,
@@ -3527,7 +3577,8 @@ spec:
                                     type: object
                                 type: object
                               terminationGracePeriodSeconds:
-                                description: Optional duration in seconds the stunnerd
+                                default: 3600
+                                description: Optional duration in seconds the LiveKit
                                   needs to terminate gracefully. Defaults to 3600
                                   seconds.
                                 format: int64
@@ -3616,7 +3667,7 @@ spec:
                     properties:
                       gatewayConfig:
                         description: GatewayConfig is the configuration for the STUNner
-                          deployment's GatewayConfig.spec object
+                          deployment's GatewayConfig object
                         properties:
                           authLifetime:
                             description: AuthLifetime defines the lifetime of "longterm"
@@ -3727,8 +3778,8 @@ spec:
                             type: string
                         type: object
                       gatewayListeners:
-                        description: GatewayListeners is the configuration of the
-                          STUNner deployment's Gateway object
+                        description: GatewayListeners list is the configuration for
+                          the STUNner deployment's Gateway object
                         items:
                           description: Listener embodies the concept of a logical
                             endpoint where a Gateway accepts network connections.

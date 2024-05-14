@@ -9,11 +9,19 @@ the future if there is interest in it by the people.
 
 ## Table of contents
 * [Description](#description)
-* [Features](#current-features)
+* [Features](#current-capabilities)
+* [LiveKitMesh custom resource](#livekitmesh-custom-resource)
+* [Component liveKit](#component-livekit)
+* [Component stunner](#component-stunner)
+* [Component applicationExpose](#component-applicationexpose)
+* [Component ingress](#component-ingress)
+* [Component egress](#component-egress)
 * [Running the operator](#running-the-operator)
   * [Running locally](#running-locally)
   * [Deploying into the cluster via kubectl](#deploying-into-the-cluster-via-kubectl)
   * [Deploying into the cluster using Helm](#deploying-into-the-cluster-using-helm)
+* [Uninstall CRDs](#uninstall-crds)
+* [Licence](#license)
 
 ## Description
 Since WebRTC and Kubernetes doesn't walk holding hands it can be a real struggle to deploy your application into your cluster.
@@ -152,112 +160,146 @@ spec:
 ### Component liveKit
 This component is REQUIRED.  
 In the `liveKit` component users can configure the startup configuration for the LiveKit server, and the container spec.
-Note that the `spec.components.liveKit.deployment.container` is not the full container spec 
+Note that the `spec.components.liveKit.deployment.container` is not the full container spec.
+ALL fields in the below table are in the `spec.components.liveKit` field object.
 
-| Field                            | Type              | Description                                                                                                                                                          | Required |
-|----------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| deployment.replicas              | int               | Number of desired pods. This is a pointer to distinguish between  explicit zero and not specified. Defaults to `7`.                                                  | False    |
-| deployment.config.keys           | map[string]string | API key / secret pairs. Keys are used for JWT authentication,  server APIs would require a keypair in order to generate access tokens  and make calls to the server. | True     |
-| deployment.config.log_level      | string            | LogLevel is the level used in the LiveKit server. Defaults to `info` Valid values: `debug`,`info`,`warn`,`error`                                                     | False    |
-| deployment.config.port           | int               | Port is main TCP port for RoomService and RTC endpoint. Defaults to `7880`.                                                                                          | False    |
-| deployment.config.redis          | {}                | Redis configuration. Redis in case `redis` is configured no Redis  resources will be created by the operator.                                                        | False    |
-| deployment.config.redis.address  | string            | Address of the Redis service.                                                                                                                                        | False    |
-| deployment.config.redis.username | string            | Username for the Redis connection.                                                                                                                                   | False    |
-| deployment.config.redis.password | string            | Password for the Redis connection.                                                                                                                                   | False    |
-| deployment.config.redis.db       | string            | Database in Redis to use.                                                                                                                                            | False    |
-| deployment.config.rtc            |                   |                                                                                                                                                                      |          |
+| Field                                  	 | Type              	 | Description                                                                                                                                                          	  | Required 	 |
+|------------------------------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| deployment.replicas                    	 | int               	 | Number of desired pods. This is a pointer to distinguish between  explicit zero and not specified. Defaults to `1`.                                                  	  | False    	 |
+| deployment.config.keys                 	 | map[string]string 	 | API key / secret pairs. Keys are used for JWT authentication,  server APIs would require a keypair in order to generate access tokens  and make calls to the server. 	  | True     	 |
+| deployment.config.log_level            	 | string            	 | LogLevel is the level used in the LiveKit server. Defaults to `info` Valid values: `debug`,`info`,`warn`,`error`                                                     	  | False    	 |
+| deployment.config.port                 	 | int               	 | Port is main TCP port for RoomService and RTC endpoint. Defaults to `7880`.                                                                                          	  | False    	 |
+| deployment.config.redis                	 | {}                	 | Redis configuration. Redis in case `redis` is configured no Redis  resources will be created by the operator.                                                        	  | False    	 |
+| deployment.config.redis.address        	 | string            	 | Address of the Redis service.                                                                                                                                        	  | False    	 |
+| deployment.config.redis.username       	 | string            	 | Username for the Redis connection.                                                                                                                                   	  | False    	 |
+| deployment.config.redis.password       	 | string            	 | Password for the Redis connection.                                                                                                                                   	  | False    	 |
+| deployment.config.redis.db             	 | string            	 | Database in Redis to use.                                                                                                                                            	  | False    	 |
+| deployment.config.rtc                  	 | {}                	 | WebRTC configuration for LiveKit                                                                                                                                     	  | False    	 |
+| deployment.config.rtc.port_range_start 	 | int               	 | UDP ports to use for client traffic. Defaults to `50000`.                                                                                                            	  | False    	 |
+| deployment.config.rtc.port_range_end   	 | int               	 | UDP ports to use for client traffic. Defaults to `60000`.                                                                                                            	  | False    	 |
+| deployment.config.rtc.tcp_port         	 | int               	 | NOT WORKING as of now! When set, LiveKit enable WebRTC ICE over TCP when UDP isn't available. Defaults to `7801`.                                                     	 | False    	 |                                                                                                                                                               |          |
 
 ### Component stunner
-This component is REQUIRED.
+This component is REQUIRED.  
+In the `stunner` component users can configure and personalize the STUNner related resources, 
+such as the authentication method, protocol and port.
+ALL fields in the below table are in the `spec.components.stunner` field object.
+
+| Field            	 | Type 	 | Description                                                                                                                                                                                                                                                	 | Required 	 |
+|--------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| gatewayConfig    	 | {}   	 | GatewayConfig is the configuration for the STUNner deployment's GatewayConfig object. This object is copied from the STUNner API. See how to configure it here: https://pkg.go.dev/github.com/l7mp/stunner-gateway-operator/api/v1alpha1#GatewayConfigSpec 	 | True     	 |
+| gatewayListeners 	 | []   	 | GatewayListeners list is the configuration for the STUNner deployment's Gateway object. The list takes the Gateway API V1's Listener object. See how to configure each element: https://pkg.go.dev/sigs.k8s.io/gateway-api@v1.1.0/apis/v1#Listener         	 | True     	 |
 
 ### Component applicationExpose
 This component is REQUIRED.
+In the `applicationExpose` component users can configure all the resources related to expose TCP and HTTP based
+applications (LiveKit server and Ingress).  
+ALL fields in the below table are in the `spec.components.applicationExpose` field object.
+
+| Field                                                	 | Type   	 | Description                                                                                                                                                                                                                                                                                                                          	 | Required 	 |
+|--------------------------------------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| applicationExpose                                    	 | {}     	 | ApplicationExpose is the component that contains all required subcomponents that are accountable for exposing the application to the internet on a secure, encrypted way. This includes the Cert-manager, Envoy GW, and ExternalDns.                                                                                                 	 | True     	 |
+| applicationExpose.hostName                           	 | string 	 | HostName is the DNS hostname that will be used by both Cert-Manager, External DNS and Envoy GW. DnsZone Certificate requests will be issued against this  HostName. This ChallengeSolver will use this to solve the challenge.                                                                                                       	 | True     	 |
+| applicationExpose.certManager                        	 | {}     	 | CertManager will obtain certificates from a variety of Issuers, both popular public Issuers and private Issuers, and ensure the certificates are valid and up-to-date, and will attempt to renew certificates at a configured time before expiry.                                                                                    	 | False    	 |
+| applicationExpose.certManager.issuer                 	 | {}     	 | Issuer holds the necessary configuration for the used Issuer                                                                                                                                                                                                                                                                         	 | False    	 |
+| applicationExpose.certManager.issuer.email           	 | string 	 | Email is the email address to be associated with the ACME account. This field is optional, but it is strongly recommended to be set.  It will be used to contact you in case of issues with your account or certificates, including expiry notification emails. This field may be updated after the account is initially registered. 	 | False    	 |
+| applicationExpose.certManager.issuer.challangeSolver 	 | string 	 | ChallengeSolver is used to configure a DNS01 challenge provider to be used when solving DNS01 challenges. Valid values:  `cloudflare`, `route53`, `clouddns`, `digitalocean`, `azuredns`. NOTE: currently only `cloudflare` is supported.                                                                                            	 | True     	 |
+| applicationExpose.certManager.issuer.apiToken        	 | string 	 | ApiToken is the API token for the CloudFlare account that owns the challenged DnsZone.                                                                                                                                                                                                                                               	 | True     	 |
 
 ### Component ingress
 This component is OPTIONAL.
+In the `ingress` component users can configure the LiveKit Ingress related resources.
+ALL fields in the below table are in the `spec.components.ingress` field object.
+
+| Field                                            	 | Type   	 | Description                                                                                                                                                                                             	 | Required 	 |
+|----------------------------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| config                                           	 | {}     	 | Config holds configuration for the LiveKit Ingress                                                                                                                                                      	 | False    	 |
+| config.cpu_cost                                  	 | {}     	 | CPU resources to reserve when accepting sessions, in fraction of core count                                                                                                                             	 | False    	 |
+| config.cpu_cost.rtmp_cpu_cost                    	 | int    	 | CPU resources to reserve when accepting RTMP sessions, in fraction of core count                                                                                                                        	 | False    	 |
+| config.cpu_cost.whip_cpu_cost                    	 | int    	 | CPU resources to reserve when accepting WHIP sessions, in fraction of core count                                                                                                                        	 | False    	 |
+| config.cpu_cost.whip_bypass_transcoding_cpu_cost 	 | int    	 | CPU resources to reserve when accepting WHIP sessions with transcoding disabled, in fraction of core count                                                                                              	 | False    	 |
+| config.health_port                               	 | int    	 | If used, will open an http port for health checks.                                                                                                                                                      	 | False    	 |
+| config.prometheus_port                           	 | int    	 | Port used to collect Prometheus metrics.                                                                                                                                                                	 | False    	 |
+| config.rtmp_port                                 	 | int    	 | Port for the RMTP service. If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, tcp route) will be created. If omitted completely no resources will be created for it.  	 | False    	 |
+| config.whip_port                                 	 | int    	 | Port for the WHIP service. If specified the all the necessary rescources (e.g.: gatewayclass, gateway listener, http route) will be created. If omitted completely no resources will be created for it. 	 | False    	 |
+| config.http_relay_port                           	 | int    	 | TCP port for communication between the main service process and session handler processes                                                                                                               	 | False    	 |
+| config.logging.level                             	 | string 	 | Sets the log level of the deployed Ingress resource. debug, info, warn, or error. Defaults to `info`.                                                                                                   	 | False    	 |
 
 ### Component egress
 This component is OPTIONAL.
+In the `egress` component users can configure the LiveKit Ingress related resources.
+ALL fields in the below table are in the `spec.components.egress` field object.
 
+| Field                  	 | Type   	 | Description                                                                                          	 | Required 	 |
+|--------------------------|----------|--------------------------------------------------------------------------------------------------------|------------|
+| config                 	 | {}     	 | Config holds configuration for the LiveKit Egress                                                    	 | False    	 |
+| config.health_port     	 | int    	 | If used, will open an http port for health checks.                                                   	 | False    	 |
+| config.template_port   	 | int    	 | Port used to host default templates.                                                                 	 | False    	 |
+| config.prometheus_port 	 | int    	 | Port used to collect Prometheus metrics.                                                             	 | False    	 |
+| config.log_level       	 | string 	 | Sets the log level of the deployed Egress resource. debug, info, warn, or error. Defaults to `info`. 	 | False    	 |
+| config.s3              	 | {}     	 | S3 configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                      	 | False    	 |
+| config.azure           	 | 	        | Azure configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                   	 | False    	 |
+| config.gcp             	 | 	        | GCP configuration. See  https://docs.livekit.io/home/self-hosting/egress/#Config                     	 | False    	 |
 
 ## Running the operator
 
-### Running locally
- 
-### Deploying into the cluster via kubectl
-
-### Deploying into the cluster using Helm
-
-
-
-
-### Running on the cluster
-1. Install Instances of Custom Resources:
-
+There are multiple ways to run the operator. In the following subsections there are three different methods.
+But first the `LiveKitMesh` CRD must be installed into the cluster.
 ```sh
-kubectl apply -f config/samples/
-```
-
-2. Build and push your image to the location specified by `IMG`:
-
-```sh
-make docker-build docker-push IMG=<some-registry>/livekit-operator:tag
-```
-
-3. Deploy the controller to the cluster with the image specified by `IMG`:
-
-```sh
-make deploy IMG=<some-registry>/livekit-operator:tag
-```
-
-### Uninstall CRDs
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
-
-### Undeploy controller
-UnDeploy the controller from the cluster:
-
-```sh
-make undeploy
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
-which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
+make manifests generate
 make install
 ```
 
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+### Running locally
 
 ```sh
 make run
 ```
 
-**NOTE:** You can also run this in one step by running: `make install run`
+The above command will start the operator locally. Basically, it runs  `go run ./main.go`.
+This method will not create any resources in the operator. It uses the current `kubeconfig` to interact with your cluster.
 
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
+### Deploying into the cluster via kubectl
 
 ```sh
-make manifests
+make deploy IMG=<some-registry>/livekit-operator:<tag>
+```
+The above comamnd will deploy the controller to the cluster with the image specified by `IMG`. `deploy` uses `kubectl`
+to apply all the generated resources into the cluster.
+
+##### Undeploy controller
+Undeploy the controller from the cluster:
+
+```sh
+make undeploy
 ```
 
-**NOTE:** Run `make --help` for more information on all potential `make` targets
 
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+### Deploying into the cluster using Helm
+
+TODO
+
+###### Uninstall the Helm chart from your cluster
+
+```sh
+helm uninstall livekit-operator -n <your-namespace>
+```
+
+### Uninstall CRDs
+In case you would like to clean up everything after the Operator
+you need to delete the CRDs from the cluster.
+
+If you deployed the crd with `make install`:
+
+```sh
+make uninstall
+```
+
+If you deployed using the Helm chart you need to delete the CRD manually since Helm does not delete CRDs.
+
+```sh 
+kubectl delete crd livekitmeshes.livekit.stunner.l7mp.io
+```
 
 ## License
 
