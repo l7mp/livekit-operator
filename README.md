@@ -285,6 +285,23 @@ TODO
 helm uninstall livekit-operator -n <your-namespace>
 ```
 
+### Command-line flags
+
+It is possible to modify the log level of the operator and which Helm charts to deploy.
+The list of the flags is as follows:
+ * The default log level is `info`; however, if you would like to see everything that happens in the container feed the
+`--zap-log-level=10` flag to the startup argument list. 
+   * Usage: `go run ./main.go --zap-log-level=10`
+ * By default, three Helm charts are installed in the cluster, these are the STUNner-Gateway-Operator, Envoy-Gateway 
+and Cert-Manager. You can turn them off one-by-one in case you have your own in your cluster.
+   * Usage (this enables the stunner-gw-operator chart, while disabling the envoy-gateway and cert-manager charts:
+    ```
+       go run ./main.go \
+          --install-stunner-gateway-chart=true \
+          --install-cert-manager-chart=false \
+          --install-envoy-gateway-chart=false
+    ```
+
 ### Uninstall CRDs
 In case you would like to clean up everything after the Operator
 you need to delete the CRDs from the cluster.
