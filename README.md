@@ -55,7 +55,7 @@ The Custom Resource Definition file for the CR can be found [here](config/crd/ba
 The below yaml shows a potential configuration for the LiveKitMesh custom resource.
 The things must be explained are as follows:
 * The `metadata.name` and `metadata.namespace` pair MUST be unique otherwise things will break.
-* Component `liveKit`, `stunner`, and `applicationExpose` are REQUIRED, `ingress` and `egress` are OPTIONAL
+* `liveKit`, `stunner`, and `applicationExpose` components are REQUIRED, `ingress` and `egress` are OPTIONAL
 * 
 
 ```yaml
@@ -150,7 +150,22 @@ spec:
 ```
 
 ### Component liveKit
-This component is REQUIRED.
+This component is REQUIRED.  
+In the `liveKit` component users can configure the startup configuration for the LiveKit server, and the container spec.
+Note that the `spec.components.liveKit.deployment.container` is not the full container spec 
+
+| Field                            | Type              | Description                                                                                                                                                          | Required |
+|----------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| deployment.replicas              | int               | Number of desired pods. This is a pointer to distinguish between  explicit zero and not specified. Defaults to `7`.                                                  | False    |
+| deployment.config.keys           | map[string]string | API key / secret pairs. Keys are used for JWT authentication,  server APIs would require a keypair in order to generate access tokens  and make calls to the server. | True     |
+| deployment.config.log_level      | string            | LogLevel is the level used in the LiveKit server. Defaults to `info` Valid values: `debug`,`info`,`warn`,`error`                                                     | False    |
+| deployment.config.port           | int               | Port is main TCP port for RoomService and RTC endpoint. Defaults to `7880`.                                                                                          | False    |
+| deployment.config.redis          | {}                | Redis configuration. Redis in case `redis` is configured no Redis  resources will be created by the operator.                                                        | False    |
+| deployment.config.redis.address  | string            | Address of the Redis service.                                                                                                                                        | False    |
+| deployment.config.redis.username | string            | Username for the Redis connection.                                                                                                                                   | False    |
+| deployment.config.redis.password | string            | Password for the Redis connection.                                                                                                                                   | False    |
+| deployment.config.redis.db       | string            | Database in Redis to use.                                                                                                                                            | False    |
+| deployment.config.rtc            |                   |                                                                                                                                                                      |          |
 
 ### Component stunner
 This component is REQUIRED.

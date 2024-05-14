@@ -130,9 +130,17 @@ type Redis struct {
 }
 
 type Rtc struct {
-	PortRangeEnd   *int `yaml:"port_range_end" json:"port_range_end,omitempty"`
+
+	// PortRangeEnd UDP ports to use for client traffic.
+	// +kubebuilder:default=50000
+	PortRangeEnd *int `yaml:"port_range_end" json:"port_range_end,omitempty"`
+
+	// PortRangeStart UDP ports to use for client traffic.
+	// +kubebuilder:default=60000
 	PortRangeStart *int `yaml:"port_range_start" json:"port_range_start,omitempty"`
-	TcpPort        *int `yaml:"tcp_port" json:"tcp_port,omitempty"`
+
+	// TcpPort When set, LiveKit enable WebRTC ICE over TCP when UDP isn't available.
+	TcpPort *int `yaml:"tcp_port" json:"tcp_port,omitempty"`
 }
 
 //type IngressAddresses struct {
@@ -141,14 +149,34 @@ type Rtc struct {
 //}
 
 type LiveKitConfig struct {
-	Keys     *map[string]string `yaml:"keys" json:"keys,omitempty"`
-	LogLevel *string            `yaml:"log_level" json:"log_level,omitempty"`
-	Port     *int               `yaml:"port" json:"port,omitempty"`
+
+	// Keys API key / secret pairs.
+	// Keys are used for JWT authentication, server APIs would require a keypair in order to generate access tokens
+	// and make calls to the server
+	//
+	// +kubebuilder:validation:Required
+	Keys *map[string]string `yaml:"keys" json:"keys,omitempty"`
+
+	// LogLevel is the level used in the LiveKit server
+	//
+	// +kubebuilder:default=info
+	// +kubebuilder:validation:Enum=debug;info;warn;error
+	// +optional
+	LogLevel *string `yaml:"log_level" json:"log_level,omitempty"`
+
+	// Port is main TCP port for RoomService and RTC endpoint.
+	//
+	// +kubebuilder:default=7880
+	// +optional
+	Port *int `yaml:"port" json:"port,omitempty"`
 
 	// Redis in case redis is configured no Redis resources will be created by the operator
 	// The value of this field inherited to the Ingress and Egress config as well
 	Redis *Redis `yaml:"redis" json:"redis,omitempty"`
-	Rtc   *Rtc   `yaml:"rtc" json:"rtc,omitempty"`
+
+	// Rtc WebRTC configuration for LiveKit
+	//
+	Rtc *Rtc `yaml:"rtc" json:"rtc,omitempty"`
 	//IngressAddresses *IngressAddresses `yaml:"ingress" json:"ingress,omitempty"`
 }
 
