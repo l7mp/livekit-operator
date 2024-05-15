@@ -60,8 +60,8 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 
 		egwRelease, err := (*e.GetClient()).InstallOrUpgradeChart(ctx, e.GetChartSpec(), nil)
 		if err != nil {
+			log.Error(err, "Failed to install envoy gateway chart")
 			// Rollback to the previous version of the release.
-			log.Error(err, "failed to install chart")
 			if err := (*e.GetClient()).RollbackRelease(e.GetChartSpec()); err != nil {
 				// In case rollback also failed throw hands in the air and then die
 				panic(err)
@@ -75,7 +75,7 @@ func (e *EnvoyGatewayOperator) InstallChart(ctx context.Context, logger logr.Log
 				log.Error(nil, "installation of the Envoy Gateway Operator was NOT successful", "status", egwRelease.Info.Status)
 				err := e.UninstallChart()
 				if err != nil {
-					log.Info("could not uninstall chart when it its' installation was NOT successful")
+					log.Info("could not uninstall chart when its installation was NOT successful")
 					return
 				}
 			}

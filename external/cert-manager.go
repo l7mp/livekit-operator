@@ -74,6 +74,7 @@ func (e *CertManager) InstallChart(ctx context.Context, logger logr.Logger) erro
 
 		egwRelease, err := (*e.GetClient()).InstallOrUpgradeChart(ctx, e.GetChartSpec(), nil)
 		if err != nil {
+			log.Error(err, "Failed to install cert-manager chart")
 			// Rollback to the previous version of the release.
 			if err := (*e.GetClient()).RollbackRelease(e.GetChartSpec()); err != nil {
 				// In case rollback also failed throw hands in the air and then die

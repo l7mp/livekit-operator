@@ -74,6 +74,7 @@ func (e *StunnerGatewayOperator) InstallChart(ctx context.Context, logger logr.L
 
 		egwRelease, err := (*e.GetClient()).InstallOrUpgradeChart(ctx, e.GetChartSpec(), nil)
 		if err != nil {
+			log.Error(err, "Failed to install stunner-gateway-operator")
 			// Rollback to the previous version of the release.
 			if err := (*e.GetClient()).RollbackRelease(e.GetChartSpec()); err != nil {
 				// In case rollback also failed throw hands in the air and then die
@@ -87,7 +88,7 @@ func (e *StunnerGatewayOperator) InstallChart(ctx context.Context, logger logr.L
 			log.Error(nil, "installation of the Envoy Gateway Operator was NOT successful", "status", egwRelease.Info.Status)
 			err := e.UninstallChart()
 			if err != nil {
-				log.Info("could not uninstall chart when it its' installation was NOT successful")
+				log.Info("could not uninstall chart when its installation was NOT successful")
 				return
 			}
 		}
