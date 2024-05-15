@@ -23,8 +23,7 @@ const (
 )
 
 var (
-	//baseUrl              = fmt.Sprintf("http://stunner-auth.%s.svc.cluster.local:8088/ice?service=%s", stunnerAuthNamespace, service)
-	baseUrlWithLbStunner = fmt.Sprintf("http://34.116.165.62:8088/ice?service=%s", service)
+	baseUrl = fmt.Sprintf("http://stunner-auth.%s.svc.cluster.local:8088/ice?service=%s", stunnerAuthNamespace, service)
 )
 
 func getIceConfigurationFromStunnerAuth(lkMesh v1alpha1.LiveKitMesh, log logr.Logger) (*stnrauthsvc.IceConfig, error) {
@@ -35,7 +34,7 @@ func getIceConfigurationFromStunnerAuth(lkMesh v1alpha1.LiveKitMesh, log logr.Lo
 		log.V(2).Info("Could not create parameter list", "reason", logMsg)
 		return nil, nil
 	}
-	url := fmt.Sprintf("%s%s", baseUrlWithLbStunner, *parameterList)
+	url := fmt.Sprintf("%s%s", baseUrl, *parameterList)
 
 	var iceConfig stnrauthsvc.IceConfig
 	var resp *http.Response

@@ -70,8 +70,8 @@ func TestNetworkUtils(t *testing.T) {
 				}))
 				defer mockServer.Close()
 
-				// Replace baseUrlWithLbStunner with mock server URL
-				baseUrlWithLbStunner = fmt.Sprintf("%s?ice", mockServer.URL)
+				// Replace baseUrl with mock server URL
+				baseUrl = fmt.Sprintf("%s?ice", mockServer.URL)
 
 				// Run the function under test
 				result, err := getIceConfigurationFromStunnerAuth(*mockLiveKitMesh, r.log)
@@ -113,7 +113,7 @@ func TestNetworkUtils(t *testing.T) {
 					//_, _ = w.Write()
 				}))
 				defer mockServer.Close()
-				baseUrlWithLbStunner = fmt.Sprintf("%s?ice", mockServer.URL)
+				baseUrl = fmt.Sprintf("%s?ice", mockServer.URL)
 
 				// Run the function under test
 				result, err := getIceConfigurationFromStunnerAuth(*mockLiveKitMesh, r.log)
@@ -155,7 +155,7 @@ func TestNetworkUtils(t *testing.T) {
 					_, _ = w.Write(responseJSON)
 				}))
 				defer mockServer.Close()
-				baseUrlWithLbStunner = fmt.Sprintf("%s?ice", mockServer.URL)
+				baseUrl = fmt.Sprintf("%s?ice", mockServer.URL)
 
 				// Run the function under test
 				result, err := getIceConfigurationFromStunnerAuth(*mockLiveKitMesh, r.log)
