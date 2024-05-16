@@ -224,6 +224,9 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deployment {
 			Replicas: lkMesh.Spec.Components.LiveKit.Deployment.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
+					config.OwnedByLabelKey:       config.OwnedByLabelValue,
+					config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+					config.RelatedComponent:      config.ComponentLiveKit,
 					"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 					"app.kubernetes.io/instance": "livekit",
 				},
@@ -231,6 +234,9 @@ func createLiveKitDeployment(lkMesh *lkstnv1a1.LiveKitMesh) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
+						config.OwnedByLabelKey:       config.OwnedByLabelValue,
+						config.RelatedLiveKitMeshKey: lkMesh.GetName(),
+						config.RelatedComponent:      config.ComponentLiveKit,
 						"app.kubernetes.io/name":     *lkMesh.Spec.Components.LiveKit.Deployment.Name,
 						"app.kubernetes.io/instance": "livekit",
 					},
