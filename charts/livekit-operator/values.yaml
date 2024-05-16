@@ -43,6 +43,7 @@ livekitOperator:
 # This method is more preferred.
 stunner-gateway-operator:
   enabled: true
+  namespace: stunner-gateway-system
   stunnerGatewayOperator:
     dataplane:
       mode: managed
@@ -50,7 +51,8 @@ envoy-gateway:
   enabled: true
 cert-manager:
   enabled: true
-  installCRDs: true
+  namespace: cert-manager
+  installCRDs: false
   extraArgs:
     - --feature-gates=ExperimentalGatewayAPISupport=true
 

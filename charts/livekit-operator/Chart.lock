@@ -2,11 +2,11 @@ dependencies:
 - name: cert-manager
   repository: https://charts.jetstack.io
   version: v1.14.5
-- name: stunner-gateway-operator
+- name: stunner-gateway-operator-dev
   repository: https://l7mp.io/stunner
   version: 0.18.0
 - name: gateway-helm
   repository: oci://registry-1.docker.io/envoyproxy
   version: v1.0.1
-digest: sha256:315e5d84673d1036492d404be29407245ec4f0f6ea4c95fea0f9cde6e94ddb1a
-generated: "2024-05-16T20:22:42.248504358+02:00"
+digest: sha256:09e1be9c4dd1210d2d2d8d664c1d838bd30f59d716eecaa3f4e9d234d0b73a1e
+generated: "2024-05-16T22:14:30.944944606+02:00"
