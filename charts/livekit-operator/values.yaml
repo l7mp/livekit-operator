@@ -1,0 +1,56 @@
+# Default values for livekit-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+livekitOperator:
+  enabled: true
+  deployment:
+    name: stunner-gateway-operator
+    tolerations: []
+    nodeSelector:
+      kubernetes.io/os: linux
+    container:
+      manager:
+        image:
+          name: docker.io/l7mp/livekit-operator
+          pullPolicy: Always
+          tag: 0.1.0
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 128Mi
+        args:
+          - --health-probe-bind-address=:8081
+          - --metrics-bind-address=127.0.0.1:8080
+          - --leader-elect
+          - --zap-log-level=10
+      kubeRbacProxy:
+        image:
+          name: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
+  # The following charts are installed by the operator from code and not as a dependency chart from this chart.
+  internalHelmCharts:
+    stunnerGateway:
+      enabled: false
+    envoyGateway:
+      enabled: false
+    certManager:
+      enabled: false
+
+# The following charts are installed as a dependency/sub chart from this chart. This method does not require many RBAC roles.
+# This method is more preferred.
+stunner-gateway-operator:
+  enabled: true
+  stunnerGatewayOperator:
+    dataplane:
+      mode: managed
+envoy-gateway:
+  enabled: true
+cert-manager:
+  enabled: true
+  installCRDs: true
+  extraArgs:
+    - --feature-gates=ExperimentalGatewayAPISupport=true
+

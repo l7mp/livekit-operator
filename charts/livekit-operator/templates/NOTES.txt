@@ -1,0 +1,3 @@
+Successfully installed the LiveKit-Operator!
+To check the running operator:
+$ kubectl get deployment,po -n {{ .Release.Namespace }}

@@ -1,0 +1,106 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: livekit-operator
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: livekit-operator
+    control-plane: controller-manager
+  name: livekit-operator-controller-manager
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+                      - ppc64le
+                      - s390x
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      containers:
+      - args:
+          - --secure-listen-address=0.0.0.0:8443
+          - --upstream=http://127.0.0.1:8080/
+          - --logtostderr=true
+          - --v=0
+        image: {{ .Values.livekitOperator.deployment.container.kubeRbacProxy.image.name }}
+        name: kube-rbac-proxy
+        ports:
+          - containerPort: 8443
+            name: https
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      - args:
+        {{- range $.Values.livekitOperator.deployment.container.manager.args }}
+        - {{ . }}
+        {{- end }}
+        - --install-stunner-gateway-chart={{ .Values.livekitOperator.internalHelmCharts.stunnerGateway.enabled}}
+        - --install-envoy-gateway-chart={{ .Values.livekitOperator.internalHelmCharts.envoyGateway.enabled}}
+        - --install-cert-manager-chart={{ .Values.livekitOperator.internalHelmCharts.certManager.enabled}}
+        command:
+          - /manager
+        image: "{{ .Values.livekitOperator.deployment.container.manager.image.name }}:{{ .Values.livekitOperator.deployment.container.manager.image.tag }}"
+        imagePullPolicy:  {{ .Values.livekitOperator.deployment.container.manager.image.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {{- toYaml .Values.livekitOperator.deployment.container.manager.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: livekit-operator-controller-manager
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.livekitOperator.deployment.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.livekitOperator.deployment.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
